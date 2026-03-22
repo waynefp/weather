@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atmosphera — Weather & Phenomena</title>
+
+  <!-- Fonts: Outfit + DM Serif Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CDN v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+            serif: ['DM Serif Display', 'serif'],
+          },
+          colors: {
+            ink: '#0d0f14',
+            'ink-2': '#13161d',
+            'ink-3': '#1a1e28',
+            mist: '#8b9ab3',
+            frost: '#c8d8f0',
+            sky: '#4a90d9',
+            aurora: '#7fdbca',
+            storm: '#4b5f7c',
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* ── Base ──────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background-color: #0d0f14;
+      color: #e8edf5;
+      font-family: 'Outfit', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Grain overlay ─────────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+
+    /* ── Mesh gradient background ───────────────────────────────────── */
+    .mesh-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 20%, rgba(74,144,217,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 80% 10%, rgba(127,219,202,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 70% at 50% 90%, rgba(75,95,124,0.15) 0%, transparent 60%),
+        #0d0f14;
+      pointer-events: none;
+    }
+
+    /* ── Scrollbar ──────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #0d0f14; }
+    ::-webkit-scrollbar-thumb { background: #1a1e28; border-radius: 2px; }
+
+    /* ── Floating nav ──────────────────────────────────────────────── */
+    .nav-glass {
+      background: rgba(13, 15, 20, 0.6);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid rgba(200, 216, 240, 0.06);
+    }
+
+    /* ── Bento cards ───────────────────────────────────────────────── */
+    .bento-card {
+      background: rgba(26, 30, 40, 0.6);
+      border: 1px solid rgba(200, 216, 240, 0.07);
+      border-radius: 2rem;
+      backdrop-filter: blur(12px);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  border-color 0.3s ease,
+                  box-shadow 0.3s ease;
+      overflow: hidden;
+      position: relative;
+    }
+    .bento-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(200,216,240,0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .bento-card:hover {
+      transform: translateY(-4px) scale(1.008);
+      border-color: rgba(200, 216, 240, 0.15);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(74,144,217,0.08) inset;
+    }
+
+    /* ── Spotlight border ──────────────────────────────────────────── */
+    .spotlight-card {
+      position: relative;
+      overflow: hidden;
+    }
+    .spotlight-card .spotlight {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(74,144,217,0.15) 0%, transparent 70%);
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      transition: opacity 0.3s ease;
+      opacity: 0;
+    }
+    .spotlight-card:hover .spotlight { opacity: 1; }
+
+    /* ── Weather number ticker ─────────────────────────────────────── */
+    @keyframes countUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    .count-reveal { animation: countUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+    /* ── Float animation ───────────────────────────────────────────── */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      33%       { transform: translateY(-12px) rotate(1deg); }
+      66%       { transform: translateY(-6px) rotate(-0.5deg); }
+    }
+    .float { animation: float 6s ease-in-out infinite; }
+
+    /* ── Shimmer ───────────────────────────────────────────────────── */
+    @keyframes shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .shimmer-text {
+      background: linear-gradient(90deg, #8b9ab3 0%, #e8edf5 40%, #4a90d9 60%, #8b9ab3 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 4s linear infinite;
+    }
+
+    /* ── Typewriter ────────────────────────────────────────────────── */
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    .cursor::after {
+      content: '|';
+      animation: blink 1s ease-in-out infinite;
+      color: #4a90d9;
+      margin-left: 2px;
+    }
+
+    /* ── Pulse ring ────────────────────────────────────────────────── */
+    @keyframes pulseRing {
+      0%   { transform: scale(0.8); opacity: 0.8; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+    .pulse-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1px solid rgba(74,144,217,0.5);
+      animation: pulseRing 2s ease-out infinite;
+    }
+
+    /* ── Lightning bolt ────────────────────────────────────────────── */
+    @keyframes lightning {
+      0%, 90%, 100% { opacity: 0; }
+      92%, 96%      { opacity: 1; }
+      94%            { opacity: 0.3; }
+    }
+    .lightning { animation: lightning 4s ease-in-out infinite; }
+
+    /* ── Rain drops ────────────────────────────────────────────────── */
+    @keyframes rain {
+      0%   { transform: translateY(-10px) translateX(0); opacity: 0; }
+      10%  { opacity: 1; }
+      100% { transform: translateY(120px) translateX(-20px); opacity: 0; }
+    }
+    .raindrop {
+      position: absolute;
+      width: 1px;
+      height: 12px;
+      background: linear-gradient(to bottom, transparent, rgba(127,219,202,0.6));
+      border-radius: 1px;
+      animation: rain linear infinite;
+    }
+
+    /* ── Snow ──────────────────────────────────────────────────────── */
+    @keyframes snowfall {
+      0%   { transform: translateY(-10px) translateX(0) rotate(0deg); opacity: 0; }
+      10%  { opacity: 1; }
+      100% { transform: translateY(120px) translateX(15px) rotate(360deg); opacity: 0; }
+    }
+    .snowflake {
+      position: absolute;
+      color: rgba(200,216,240,0.7);
+      font-size: 8px;
+      animation: snowfall ease-in infinite;
+    }
+
+    /* ── Scroll reveal ──────────────────────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Gradient text ─────────────────────────────────────────────── */
+    .grad-blue {
+      background: linear-gradient(135deg, #e8edf5 0%, #4a90d9 60%, #7fdbca 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .grad-storm {
+      background: linear-gradient(135deg, #c8d8f0 0%, #7fdbca 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── Temperature arc ───────────────────────────────────────────── */
+    .arc-container svg circle.track { stroke: rgba(200,216,240,0.08); }
+    .arc-container svg circle.fill {
+      stroke: url(#arcGrad);
+      stroke-dasharray: 220;
+      stroke-dashoffset: 220;
+      transition: stroke-dashoffset 2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* ── Wind compass ──────────────────────────────────────────────── */
+    @keyframes compassSpin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    .compass-needle {
+      transform-origin: center;
+      transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* ── Phenomenon card hover tilt ────────────────────────────────── */
+    .tilt-card {
+      transform-style: preserve-3d;
+      transition: transform 0.1s ease;
+    }
+
+    /* ── Horizontal scroll strip ───────────────────────────────────── */
+    .scroll-strip {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding-bottom: 4px;
+    }
+    .scroll-strip::-webkit-scrollbar { display: none; }
+
+    /* ── Tag badge ─────────────────────────────────────────────────── */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border: 1px solid rgba(200,216,240,0.12);
+      background: rgba(200,216,240,0.04);
+      color: #8b9ab3;
+    }
+
+    /* ── Section divider ───────────────────────────────────────────── */
+    .section-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #4a90d9;
+    }
+
+    /* ── Responsive grid ───────────────────────────────────────────── */
+    .bento-main {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      grid-auto-rows: minmax(80px, auto);
+      gap: 1rem;
+    }
+
+    /* Spans */
+    .span-8  { grid-column: span 8; }
+    .span-4  { grid-column: span 4; }
+    .span-6  { grid-column: span 6; }
+    .span-3  { grid-column: span 3; }
+    .span-5  { grid-column: span 5; }
+    .span-7  { grid-column: span 7; }
+    .span-12 { grid-column: span 12; }
+
+    @media (max-width: 1024px) {
+      .span-8, .span-7, .span-5 { grid-column: span 12; }
+      .span-4                   { grid-column: span 12; }
+      .span-6                   { grid-column: span 12; }
+      .span-3                   { grid-column: span 6; }
+    }
+    @media (max-width: 640px) {
+      .span-3, .span-6, .span-4 { grid-column: span 12; }
+      .bento-main { gap: 0.75rem; }
+    }
+
+    /* ── Phenomenon grid ───────────────────────────────────────────── */
+    .phenom-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    @media (max-width: 768px) {
+      .phenom-grid { grid-template-columns: 1fr; }
+    }
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .phenom-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="mesh-bg"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       NAV
+  ═══════════════════════════════════════════════════════════════ -->
+  <nav class="nav-glass fixed top-0 left-0 right-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="relative w-8 h-8">
+          <div class="pulse-ring"></div>
+          <svg viewBox="0 0 32 32" fill="none" class="w-8 h-8 relative z-10">
+            <circle cx="16" cy="16" r="6" fill="#4a90d9"/>
+            <path d="M16 4v4M16 24v4M4 16h4M24 16h4" stroke="#4a90d9" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+            <path d="M7.5 7.5l2.8 2.8M21.7 21.7l2.8 2.8M7.5 24.5l2.8-2.8M21.7 10.3l2.8-2.8" stroke="#7fdbca" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+          </svg>
+        </div>
+        <span class="font-serif text-xl tracking-tight text-white">Atmosphera</span>
+      </div>
+
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#dashboard" class="text-sm text-mist hover:text-white transition-colors duration-200">Dashboard</a>
+        <a href="#phenomena" class="text-sm text-mist hover:text-white transition-colors duration-200">Phenomena</a>
+        <a href="#forecast" class="text-sm text-mist hover:text-white transition-colors duration-200">Forecast</a>
+        <a href="#science" class="text-sm text-mist hover:text-white transition-colors duration-200">Science</a>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span class="tag">Live</span>
+        <div class="w-2 h-2 rounded-full bg-aurora animate-pulse"></div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HERO
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="relative min-h-[100dvh] flex flex-col justify-center items-start px-6 md:px-16 lg:px-24 pt-16 overflow-hidden">
+
+    <!-- Video background -->
+    <video
+      autoplay muted loop playsinline
+      class="absolute inset-0 w-full h-full object-cover"
+      style="z-index:0"
+    >
+      <source src="3_Weathers.mp4" type="video/mp4" />
+    </video>
+
+    <!-- Layered overlay: darken + subtle vignette so text stays crisp -->
+    <div class="absolute inset-0" style="z-index:1;background:linear-gradient(to right, rgba(13,15,20,0.82) 0%, rgba(13,15,20,0.55) 55%, rgba(13,15,20,0.30) 100%)"></div>
+    <div class="absolute inset-0" style="z-index:1;background:radial-gradient(ellipse 80% 80% at 50% 110%, rgba(13,15,20,0.7) 0%, transparent 60%)"></div>
+
+    <!-- Hero text -->
+    <div class="relative max-w-3xl" style="z-index:2">
+      <div class="section-label mb-6 reveal">Weather Intelligence Platform</div>
+
+      <h1 class="font-serif text-6xl md:text-8xl lg:text-9xl leading-none tracking-tight mb-8 reveal" style="transition-delay:0.1s">
+        <span class="grad-blue">Read the</span><br/>
+        <em class="text-white/90">Sky</em>
+        <span class="text-mist/30">.</span>
+      </h1>
+
+      <p class="text-mist text-lg md:text-xl font-light leading-relaxed max-w-xl mb-12 reveal" style="transition-delay:0.2s">
+        Real-time atmospheric data, extreme weather phenomena, and deep meteorological insights — all in one beautifully crafted experience.
+      </p>
+
+      <div class="flex flex-wrap items-center gap-4 reveal" style="transition-delay:0.3s">
+        <a href="#dashboard" class="inline-flex items-center gap-2 bg-sky/90 hover:bg-sky text-white text-sm font-medium px-6 py-3 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-sky/20 hover:-translate-y-0.5">
+          Explore Dashboard
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+        </a>
+        <a href="#phenomena" class="inline-flex items-center gap-2 text-sm font-medium text-mist hover:text-white px-6 py-3 rounded-xl border border-white/8 hover:border-white/20 transition-all duration-300">
+          Weather Phenomena
+        </a>
+      </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-40" style="z-index:2">
+      <div class="w-px h-12 bg-gradient-to-b from-transparent via-mist to-transparent animate-pulse"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       DASHBOARD BENTO
+  ═══════════════════════════════════════════════════════════════ -->
+  <section id="dashboard" class="relative z-10 px-4 md:px-8 lg:px-16 py-24">
+    <div class="max-w-7xl mx-auto">
+      <div class="mb-12 reveal">
+        <div class="section-label mb-3">Live Dashboard</div>
+        <h2 class="font-serif text-4xl md:text-5xl grad-storm">Atmospheric<br/><em>Readings</em></h2>
+      </div>
+
+      <div class="bento-main">
+
+        <!-- ── CARD: Current Temp (large) ── -->
+        <div class="bento-card spotlight-card span-8 p-8 md:p-10 reveal" style="min-height:280px" data-delay="0">
+          <div class="spotlight"></div>
+          <div class="flex flex-col justify-between h-full">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="tag mb-4">New York, NY</div>
+                <div class="flex items-end gap-3 mb-2">
+                  <span class="font-serif text-8xl md:text-9xl leading-none grad-blue count-reveal" id="temp-display">24</span>
+                  <span class="text-3xl text-mist/60 pb-4">°C</span>
+                </div>
+                <div class="text-mist text-lg font-light cursor" id="weather-desc">Partly Cloudy</div>
+              </div>
+
+              <!-- Temp arc gauge -->
+              <div class="arc-container relative w-28 h-28 md:w-36 md:h-36 hidden sm:flex items-center justify-center">
+                <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
+                  <defs>
+                    <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="#4a90d9"/>
+                      <stop offset="100%" stop-color="#7fdbca"/>
+                    </linearGradient>
+                  </defs>
+                  <circle class="track" cx="50" cy="50" r="35" fill="none" stroke-width="4"/>
+                  <circle class="fill" id="temp-arc" cx="50" cy="50" r="35" fill="none" stroke-width="4" stroke-linecap="round"/>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center rotate-0">
+                  <span class="text-xs text-mist/60">Feels like</span>
+                  <span class="text-white font-semibold text-lg" id="feels-like">21°</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mini metrics strip -->
+            <div class="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/5">
+              <div>
+                <div class="text-mist/50 text-xs mb-1">Humidity</div>
+                <div class="text-white font-medium">68%</div>
+              </div>
+              <div>
+                <div class="text-mist/50 text-xs mb-1">Pressure</div>
+                <div class="text-white font-medium">1013 hPa</div>
+              </div>
+              <div>
+                <div class="text-mist/50 text-xs mb-1">Dew Point</div>
+                <div class="text-white font-medium">17°C</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CARD: Wind Compass ── -->
+        <div class="bento-card spotlight-card span-4 p-6 flex flex-col items-center justify-center reveal" style="min-height:280px" data-delay="0.1">
+          <div class="spotlight"></div>
+          <div class="tag mb-4">Wind</div>
+          <div class="relative w-36 h-36 mb-4" id="compass-wrap">
+            <svg viewBox="0 0 120 120" class="w-full h-full">
+              <!-- Compass ring -->
+              <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(200,216,240,0.07)" stroke-width="1.5"/>
+              <circle cx="60" cy="60" r="46" fill="none" stroke="rgba(200,216,240,0.04)" stroke-width="1"/>
+              <!-- Cardinal directions -->
+              <text x="60" y="12" text-anchor="middle" fill="#4a90d9" font-size="8" font-family="Outfit" font-weight="600">N</text>
+              <text x="108" y="63" text-anchor="middle" fill="#8b9ab3" font-size="7" font-family="Outfit">E</text>
+              <text x="60" y="115" text-anchor="middle" fill="#8b9ab3" font-size="7" font-family="Outfit">S</text>
+              <text x="13" y="63" text-anchor="middle" fill="#8b9ab3" font-size="7" font-family="Outfit">W</text>
+              <!-- Tick marks -->
+              <g stroke="rgba(200,216,240,0.2)" stroke-width="1">
+                <line x1="60" y1="7" x2="60" y2="14"/>
+                <line x1="113" y1="60" x2="106" y2="60"/>
+                <line x1="60" y1="113" x2="60" y2="106"/>
+                <line x1="7" y1="60" x2="14" y2="60"/>
+              </g>
+              <!-- Needle -->
+              <g class="compass-needle" id="compass-needle" style="transform-origin:60px 60px; transform:rotate(220deg)">
+                <polygon points="60,20 56,60 60,65 64,60" fill="url(#needleGrad)"/>
+                <polygon points="60,100 56,60 60,65 64,60" fill="rgba(200,216,240,0.2)"/>
+                <defs>
+                  <linearGradient id="needleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#4a90d9"/>
+                    <stop offset="100%" stop-color="#7fdbca"/>
+                  </linearGradient>
+                </defs>
+              </g>
+              <circle cx="60" cy="60" r="4" fill="#1a1e28" stroke="#4a90d9" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="text-center">
+            <div class="text-white text-2xl font-semibold">18 km/h</div>
+            <div class="text-mist/60 text-sm">SW — Moderate Breeze</div>
+          </div>
+        </div>
+
+        <!-- ── CARD: UV Index ── -->
+        <div class="bento-card span-3 p-6 reveal" data-delay="0.15">
+          <div class="tag mb-3">UV Index</div>
+          <div class="flex flex-col justify-between h-full" style="min-height:140px">
+            <div class="text-5xl font-serif grad-blue mt-2">6</div>
+            <div>
+              <div class="text-sm text-aurora font-medium mb-1">Moderate</div>
+              <div class="text-xs text-mist/50">SPF 30 recommended</div>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-white/5 mt-3 overflow-hidden">
+              <div class="h-full rounded-full bg-gradient-to-r from-sky to-aurora transition-all duration-2000" style="width:55%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CARD: Visibility ── -->
+        <div class="bento-card span-3 p-6 reveal" data-delay="0.2">
+          <div class="tag mb-3">Visibility</div>
+          <div class="flex flex-col justify-between h-full" style="min-height:140px">
+            <div class="text-5xl font-serif text-white mt-2">16<span class="text-2xl text-mist/60"> km</span></div>
+            <div>
+              <div class="text-sm text-white/70 font-medium mb-1">Crystal Clear</div>
+              <div class="text-xs text-mist/50">Above average</div>
+            </div>
+            <!-- Eye icon -->
+            <svg class="w-8 h-8 text-mist/20 mt-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- ── CARD: Precipitation Forecast (tall) ── -->
+        <div class="bento-card span-6 p-6 reveal" data-delay="0.25">
+          <div class="tag mb-4">7-Day Precipitation</div>
+          <div class="flex items-end gap-3 h-28" id="precip-bars">
+            <!-- Generated by JS -->
+          </div>
+          <div class="flex justify-between mt-3 text-xs text-mist/40">
+            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+          </div>
+        </div>
+
+        <!-- ── CARD: Air Quality ── -->
+        <div class="bento-card span-3 p-6 reveal" data-delay="0.3">
+          <div class="tag mb-3">Air Quality</div>
+          <div class="flex flex-col h-full" style="min-height:140px">
+            <div class="text-5xl font-serif grad-blue mt-2">42</div>
+            <div class="text-aurora text-sm font-medium mt-1">Good</div>
+            <div class="text-xs text-mist/50 mt-1">AQI PM2.5</div>
+            <div class="mt-auto flex gap-1">
+              <span class="h-2 flex-1 rounded bg-aurora/80"></span>
+              <span class="h-2 flex-1 rounded bg-aurora/30"></span>
+              <span class="h-2 flex-1 rounded bg-white/5"></span>
+              <span class="h-2 flex-1 rounded bg-white/5"></span>
+              <span class="h-2 flex-1 rounded bg-white/5"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CARD: Sunrise / Sunset ── -->
+        <div class="bento-card span-3 p-6 reveal" data-delay="0.35">
+          <div class="tag mb-3">Solar</div>
+          <!-- Sun arc SVG -->
+          <svg viewBox="0 0 160 80" class="w-full mb-3">
+            <defs>
+              <linearGradient id="sunArcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#4a90d9" stop-opacity="0.3"/>
+                <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#ef4444" stop-opacity="0.3"/>
+              </linearGradient>
+            </defs>
+            <path d="M10,75 Q80,-20 150,75" fill="none" stroke="rgba(200,216,240,0.1)" stroke-width="1.5" stroke-dasharray="4 4"/>
+            <path d="M10,75 Q80,-20 150,75" fill="none" stroke="url(#sunArcGrad)" stroke-width="2" stroke-dasharray="220" stroke-dashoffset="80" id="sun-arc-fill"/>
+            <!-- Sun position dot -->
+            <circle id="sun-dot" cx="80" cy="22" r="5" fill="#f59e0b"/>
+            <circle id="sun-glow" cx="80" cy="22" r="10" fill="rgba(245,158,11,0.15)"/>
+            <!-- Horizon -->
+            <line x1="0" y1="75" x2="160" y2="75" stroke="rgba(200,216,240,0.08)" stroke-width="1"/>
+          </svg>
+          <div class="flex justify-between text-xs">
+            <div>
+              <div class="text-mist/50">Sunrise</div>
+              <div class="text-white font-medium">6:18 AM</div>
+            </div>
+            <div class="text-right">
+              <div class="text-mist/50">Sunset</div>
+              <div class="text-white font-medium">7:42 PM</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /bento-main -->
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HOURLY FORECAST STRIP
+  ═══════════════════════════════════════════════════════════════ -->
+  <section id="forecast" class="relative z-10 px-4 md:px-8 lg:px-16 pb-24">
+    <div class="max-w-7xl mx-auto">
+      <div class="bento-card p-6 reveal">
+        <div class="tag mb-5">Hourly Forecast — Today</div>
+        <div class="scroll-strip" id="hourly-strip">
+          <!-- JS populated -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       WEATHER PHENOMENA
+  ═══════════════════════════════════════════════════════════════ -->
+  <section id="phenomena" class="relative z-10 px-4 md:px-8 lg:px-16 py-24">
+    <div class="max-w-7xl mx-auto">
+      <div class="mb-16 reveal">
+        <div class="section-label mb-3">Atmospheric Phenomena</div>
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <h2 class="font-serif text-4xl md:text-6xl leading-tight">
+            <span class="grad-blue">Nature's Most</span><br/>
+            <em class="text-white">Spectacular Events</em>
+          </h2>
+          <p class="text-mist max-w-xs text-sm font-light leading-relaxed">
+            From silent auroras to devastating tornadoes, Earth's atmosphere is in constant, dramatic motion.
+          </p>
+        </div>
+      </div>
+
+      <div class="phenom-grid">
+
+        <!-- LIGHTNING -->
+        <div class="bento-card tilt-card p-0 overflow-hidden reveal" data-delay="0" style="min-height:400px">
+          <div class="relative w-full h-full p-7 flex flex-col justify-between" style="min-height:400px">
+            <!-- Background art -->
+            <div class="absolute inset-0 overflow-hidden">
+              <div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(75,95,124,0.3), rgba(13,15,20,0.95))"></div>
+              <!-- Lightning SVG -->
+              <svg viewBox="0 0 300 400" class="absolute inset-0 w-full h-full lightning" preserveAspectRatio="xMidYMid slice">
+                <path d="M180,0 L120,160 L160,160 L90,400" stroke="rgba(200,216,240,0.9)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <path d="M180,0 L120,160 L160,160 L90,400" stroke="white" stroke-width="0.5" fill="none"/>
+                <path d="M180,0 L120,160 L160,160 L90,400" stroke="rgba(74,144,217,0.5)" stroke-width="8" fill="none" filter="url(#blur)"/>
+                <filter id="blur"><feGaussianBlur stdDeviation="4"/></filter>
+              </svg>
+              <!-- Storm clouds -->
+              <div class="absolute top-0 left-0 right-0 h-32 opacity-30"
+                style="background:radial-gradient(ellipse 100% 80% at 50% -20%, rgba(75,95,124,0.8), transparent)"></div>
+            </div>
+
+            <div class="relative z-10">
+              <span class="tag">Electrical</span>
+            </div>
+
+            <div class="relative z-10">
+              <h3 class="font-serif text-3xl text-white mb-3">Lightning<br/><em>& Thunderstorms</em></h3>
+              <p class="text-mist/70 text-sm leading-relaxed mb-4">
+                A lightning bolt is 5× hotter than the sun's surface, reaching 30,000 K in microseconds. The rapid heating expands air at supersonic speeds, creating thunder.
+              </p>
+              <div class="flex gap-4 text-xs text-mist/50">
+                <span>⚡ 30,000 K</span>
+                <span>🌍 1.4B strikes/yr</span>
+                <span>⏱ 0.2ms duration</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AURORA -->
+        <div class="bento-card tilt-card p-0 overflow-hidden reveal" data-delay="0.1" style="min-height:400px">
+          <div class="relative w-full h-full p-7 flex flex-col justify-between" style="min-height:400px">
+            <div class="absolute inset-0 overflow-hidden">
+              <!-- Aurora effect -->
+              <div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(13,15,20,0.3) 0%, rgba(13,15,20,0.95) 70%)"></div>
+              <div id="aurora-bg" class="absolute inset-0"></div>
+            </div>
+
+            <div class="relative z-10">
+              <span class="tag">Geomagnetic</span>
+            </div>
+
+            <div class="relative z-10">
+              <h3 class="font-serif text-3xl text-white mb-3">Aurora<br/><em>Borealis</em></h3>
+              <p class="text-mist/70 text-sm leading-relaxed mb-4">
+                Solar winds carrying charged particles interact with Earth's magnetosphere at 60–200 km altitude, exciting atmospheric gases into a luminous curtain of dancing light.
+              </p>
+              <div class="flex gap-4 text-xs text-mist/50">
+                <span>🌌 60–200 km</span>
+                <span>☀️ Solar wind</span>
+                <span>🌡 –80°C</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TORNADO -->
+        <div class="bento-card tilt-card p-0 overflow-hidden reveal" data-delay="0.2" style="min-height:400px">
+          <div class="relative w-full h-full p-7 flex flex-col justify-between" style="min-height:400px">
+            <div class="absolute inset-0 overflow-hidden">
+              <div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(75,95,124,0.2), rgba(13,15,20,0.95))"></div>
+              <!-- Tornado SVG -->
+              <svg viewBox="0 0 300 400" class="absolute top-0 left-0 w-full h-64" preserveAspectRatio="xMidYMin slice">
+                <g opacity="0.6">
+                  <ellipse cx="150" cy="60" rx="80" ry="20" fill="none" stroke="rgba(200,216,240,0.3)" stroke-width="1.5"/>
+                  <ellipse cx="150" cy="100" rx="65" ry="16" fill="none" stroke="rgba(200,216,240,0.25)" stroke-width="1.5"/>
+                  <ellipse cx="150" cy="140" rx="48" ry="12" fill="none" stroke="rgba(200,216,240,0.2)" stroke-width="1.5"/>
+                  <ellipse cx="150" cy="180" rx="32" ry="9" fill="none" stroke="rgba(200,216,240,0.18)" stroke-width="1.5"/>
+                  <ellipse cx="150" cy="215" rx="18" ry="6" fill="none" stroke="rgba(200,216,240,0.15)" stroke-width="1.5"/>
+                  <ellipse cx="150" cy="245" rx="8" ry="4" fill="none" stroke="rgba(200,216,240,0.1)" stroke-width="1.5"/>
+                </g>
+                <!-- Funnel shape -->
+                <path d="M70,60 Q150,260 150,280 Q150,260 230,60" fill="rgba(75,95,124,0.08)" stroke="none"/>
+              </svg>
+            </div>
+
+            <div class="relative z-10">
+              <span class="tag">Severe</span>
+            </div>
+
+            <div class="relative z-10">
+              <h3 class="font-serif text-3xl text-white mb-3">Tornado<br/><em>& Supercell</em></h3>
+              <p class="text-mist/70 text-sm leading-relaxed mb-4">
+                Rotating thunderstorms can spawn tornadoes with winds exceeding 500 km/h. The mesocyclone extends from cloud base to the ground, creating nature's most violent storm.
+              </p>
+              <div class="flex gap-4 text-xs text-mist/50">
+                <span>🌪 500 km/h max</span>
+                <span>⚡ EF5 category</span>
+                <span>🗺 Tornado Alley</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HURRICANE -->
+        <div class="bento-card tilt-card p-0 overflow-hidden reveal" data-delay="0.3" style="min-height:380px">
+          <div class="relative w-full h-full p-7 flex flex-col justify-between" style="min-height:380px">
+            <div class="absolute inset-0 overflow-hidden">
+              <div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(13,15,20,0.2), rgba(13,15,20,0.9))"></div>
+              <!-- Hurricane spiral -->
+              <svg viewBox="0 0 300 300" class="absolute top-0 right-0 w-48 h-48 opacity-20">
+                <defs><style>
+                  .spiral { animation: spinSlow 20s linear infinite; transform-origin: 150px 150px; }
+                  @keyframes spinSlow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+                </style></defs>
+                <g class="spiral">
+                  <path d="M150,150 m0,-70 a70,70 0 1,1 -0.1,0" fill="none" stroke="rgba(74,144,217,0.6)" stroke-width="2" stroke-dasharray="8 4"/>
+                  <path d="M150,150 m0,-50 a50,50 0 1,1 -0.1,0" fill="none" stroke="rgba(74,144,217,0.5)" stroke-width="1.5" stroke-dasharray="6 4"/>
+                  <path d="M150,150 m0,-30 a30,30 0 1,1 -0.1,0" fill="none" stroke="rgba(127,219,202,0.4)" stroke-width="1" stroke-dasharray="4 3"/>
+                </g>
+              </svg>
+            </div>
+
+            <div class="relative z-10">
+              <span class="tag">Tropical</span>
+            </div>
+
+            <div class="relative z-10">
+              <h3 class="font-serif text-2xl text-white mb-2">Hurricane<br/><em>& Cyclones</em></h3>
+              <p class="text-mist/70 text-xs leading-relaxed mb-3">
+                Warm ocean water fuels massive rotating storms. The calm eye — 30–65 km wide — belies the 300+ km/h eyewall winds that surround it.
+              </p>
+              <div class="flex gap-3 text-xs text-mist/50">
+                <span>🌊 26°C ocean threshold</span>
+                <span>🌀 Category 5</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FOG & MIST -->
+        <div class="bento-card tilt-card p-0 overflow-hidden reveal" data-delay="0.4" style="min-height:380px">
+          <div class="relative w-full h-full p-7 flex flex-col justify-between" style="min-height:380px">
+            <div class="absolute inset-0">
+              <div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(13,15,20,0.1), rgba(13,15,20,0.9))"></div>
+              <!-- Fog layers -->
+              <div class="absolute bottom-0 left-0 right-0 overflow-hidden" style="height:60%">
+                <div class="absolute bottom-0 left-0 right-0 h-8 rounded-full opacity-20" style="background:rgba(200,216,240,0.3);filter:blur(20px);animation:fogDrift 8s ease-in-out infinite alternate"></div>
+                <div class="absolute bottom-8 left-0 right-0 h-6 rounded-full opacity-15" style="background:rgba(200,216,240,0.2);filter:blur(25px);animation:fogDrift 12s ease-in-out infinite alternate-reverse"></div>
+                <div class="absolute bottom-16 left-0 right-0 h-6 rounded-full opacity-10" style="background:rgba(200,216,240,0.15);filter:blur(30px);animation:fogDrift 10s ease-in-out infinite alternate"></div>
+              </div>
+              <style>
+                @keyframes fogDrift { from{transform:translateX(-5%)} to{transform:translateX(5%)} }
+              </style>
+            </div>
+
+            <div class="relative z-10">
+              <span class="tag">Low Visibility</span>
+            </div>
+
+            <div class="relative z-10">
+              <h3 class="font-serif text-2xl text-white mb-2">Fog &<br/><em>Advection Mist</em></h3>
+              <p class="text-mist/70 text-xs leading-relaxed mb-3">
+                When warm moist air flows over cooler surfaces, water vapor condenses into suspended droplets at ground level, reducing visibility to under 1 km. The stillness is deceiving.
+              </p>
+              <div class="flex gap-3 text-xs text-mist/50">
+                <span>👁 &lt;1 km visibility</span>
+                <span>💧 RH 100%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BLIZZARD / SNOW -->
+        <div class="bento-card tilt-card p-0 overflow-hidden reveal" data-delay="0.5" style="min-height:380px">
+          <div class="relative w-full h-full p-7 flex flex-col justify-between" style="min-height:380px">
+            <div class="absolute inset-0 overflow-hidden">
+              <div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(13,15,20,0.3), rgba(13,15,20,0.9))"></div>
+              <div id="snow-container-phenom" class="absolute inset-0 pointer-events-none"></div>
+            </div>
+
+            <div class="relative z-10">
+              <span class="tag">Winter</span>
+            </div>
+
+            <div class="relative z-10">
+              <h3 class="font-serif text-2xl text-white mb-2">Blizzard &<br/><em>Snowstorm</em></h3>
+              <p class="text-mist/70 text-xs leading-relaxed mb-3">
+                When sustained winds of 56+ km/h combine with heavy snowfall and temperatures below −12°C, a blizzard emerges — whiteout conditions with wind chill factors lethal in minutes.
+              </p>
+              <div class="flex gap-3 text-xs text-mist/50">
+                <span>❄️ –12°C threshold</span>
+                <span>💨 56+ km/h winds</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       SCIENCE SECTION
+  ═══════════════════════════════════════════════════════════════ -->
+  <section id="science" class="relative z-10 px-4 md:px-8 lg:px-16 py-24">
+    <div class="max-w-7xl mx-auto">
+
+      <div class="mb-16 reveal">
+        <div class="section-label mb-3">Meteorological Science</div>
+        <h2 class="font-serif text-4xl md:text-6xl grad-blue">How Weather<br/><em>Actually Works</em></h2>
+      </div>
+
+      <div class="bento-main">
+
+        <!-- Layers of the atmosphere -->
+        <div class="bento-card span-8 p-8 reveal" data-delay="0">
+          <div class="tag mb-6">Atmospheric Layers</div>
+          <div class="space-y-3" id="atm-layers">
+            <!-- JS generated -->
+          </div>
+        </div>
+
+        <!-- Cloud types -->
+        <div class="bento-card span-4 p-6 reveal" data-delay="0.1">
+          <div class="tag mb-5">Cloud Classification</div>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between py-2 border-b border-white/5">
+              <div>
+                <div class="text-white text-sm font-medium">Cirrus</div>
+                <div class="text-mist/50 text-xs">High altitude · Ice crystals</div>
+              </div>
+              <span class="text-xs text-sky">8–12 km</span>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-white/5">
+              <div>
+                <div class="text-white text-sm font-medium">Cumulonimbus</div>
+                <div class="text-mist/50 text-xs">Thunderstorm engine</div>
+              </div>
+              <span class="text-xs text-sky">0–16 km</span>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-white/5">
+              <div>
+                <div class="text-white text-sm font-medium">Stratus</div>
+                <div class="text-mist/50 text-xs">Low grey blanket</div>
+              </div>
+              <span class="text-xs text-sky">0–2 km</span>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-white/5">
+              <div>
+                <div class="text-white text-sm font-medium">Altocumulus</div>
+                <div class="text-mist/50 text-xs">Mid-level clumps</div>
+              </div>
+              <span class="text-xs text-sky">2–7 km</span>
+            </div>
+            <div class="flex items-center justify-between py-2">
+              <div>
+                <div class="text-white text-sm font-medium">Nimbostratus</div>
+                <div class="text-mist/50 text-xs">Continuous rain sheet</div>
+              </div>
+              <span class="text-xs text-sky">0–4 km</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Beaufort scale -->
+        <div class="bento-card span-6 p-6 reveal" data-delay="0.15">
+          <div class="tag mb-5">Beaufort Wind Scale</div>
+          <div class="space-y-2" id="beaufort-scale">
+            <!-- JS generated -->
+          </div>
+        </div>
+
+        <!-- Fun facts -->
+        <div class="bento-card span-6 p-6 reveal" data-delay="0.2">
+          <div class="tag mb-5">Did You Know?</div>
+          <div class="space-y-4" id="fact-cards">
+            <!-- JS generated -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════════════════════════ -->
+  <footer class="relative z-10 px-4 md:px-8 lg:px-16 py-16 border-t border-white/5">
+    <div class="max-w-7xl mx-auto">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+        <div>
+          <div class="flex items-center gap-3 mb-3">
+            <svg viewBox="0 0 32 32" fill="none" class="w-6 h-6">
+              <circle cx="16" cy="16" r="6" fill="#4a90d9"/>
+              <path d="M16 4v4M16 24v4M4 16h4M24 16h4" stroke="#4a90d9" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+            </svg>
+            <span class="font-serif text-lg text-white">Atmosphera</span>
+          </div>
+          <p class="text-mist/40 text-sm max-w-xs">Real-time weather intelligence powered by global atmospheric data networks.</p>
+        </div>
+        <div class="flex flex-wrap gap-6 text-sm text-mist/40">
+          <a href="#dashboard" class="hover:text-white transition-colors">Dashboard</a>
+          <a href="#phenomena" class="hover:text-white transition-colors">Phenomena</a>
+          <a href="#forecast" class="hover:text-white transition-colors">Forecast</a>
+          <a href="#science" class="hover:text-white transition-colors">Science</a>
+        </div>
+      </div>
+      <div class="mt-12 pt-6 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-2 text-xs text-mist/25">
+        <span>© 2026 Atmosphera. All atmospheric data displayed for educational purposes.</span>
+        <span class="shimmer-text">Designed with Taste-Skill</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       JAVASCRIPT
+  ═══════════════════════════════════════════════════════════════ -->
+  <script>
+  (() => {
+    'use strict';
+
+    /* ── 1. Scroll reveal ─────────────────────────────────────── */
+    const revealObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const delay = e.target.dataset.delay ? parseFloat(e.target.dataset.delay) * 1000 : 0;
+          setTimeout(() => e.target.classList.add('visible'), delay);
+          revealObs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+    /* ── 2. Snow in phenomena card ──────────────────────────── */
+    const snowPhenom = document.getElementById('snow-container-phenom');
+    if (snowPhenom) {
+      const flakes = ['❄', '❅', '❆', '*', '·'];
+      for (let i = 0; i < 20; i++) {
+        const flake = document.createElement('div');
+        flake.className = 'snowflake';
+        flake.textContent = flakes[Math.floor(Math.random() * flakes.length)];
+        Object.assign(flake.style, {
+          left: Math.random() * 100 + '%',
+          top: Math.random() * 100 + '%',
+          fontSize: (Math.random() * 12 + 6) + 'px',
+          animationDuration: (Math.random() * 4 + 3) + 's',
+          animationDelay: Math.random() * 5 + 's',
+          opacity: Math.random() * 0.5 + 0.2,
+        });
+        snowPhenom.appendChild(flake);
+      }
+    }
+
+    /* ── 5. Aurora background ─────────────────────────────────── */
+    const auroraBg = document.getElementById('aurora-bg');
+    if (auroraBg) {
+      auroraBg.style.cssText = `
+        position:absolute; inset:0;
+        background: linear-gradient(180deg,
+          transparent 0%,
+          rgba(127,219,202,0.12) 20%,
+          rgba(74,144,217,0.10) 40%,
+          rgba(127,219,202,0.08) 60%,
+          transparent 80%
+        );
+        animation: auroraShift 8s ease-in-out infinite alternate;
+      `;
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes auroraShift {
+          0%  { transform: translateY(0) scaleX(1); opacity: 0.6; }
+          50% { transform: translateY(-20px) scaleX(1.05); opacity: 1; }
+          100%{ transform: translateY(10px) scaleX(0.95); opacity: 0.7; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    /* ── 6. Precipitation bars ────────────────────────────────── */
+    const precipData = [15, 40, 70, 25, 10, 55, 80];
+    const precipContainer = document.getElementById('precip-bars');
+    if (precipContainer) {
+      precipData.forEach((val, i) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'flex-1 flex flex-col items-center justify-end gap-1';
+        const bar = document.createElement('div');
+        const hue = val > 60 ? '#4a90d9' : val > 30 ? '#7fdbca' : '#8b9ab3';
+        Object.assign(bar.style, {
+          width: '100%',
+          height: '0px',
+          borderRadius: '4px 4px 0 0',
+          background: `linear-gradient(to top, ${hue}, ${hue}66)`,
+          transition: `height 1.2s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.08}s`,
+          minHeight: '4px',
+        });
+        const label = document.createElement('div');
+        label.className = 'text-xs text-mist/50';
+        label.textContent = val + '%';
+        wrap.appendChild(bar);
+        wrap.appendChild(label);
+        precipContainer.appendChild(wrap);
+
+        // Animate after mount
+        requestAnimationFrame(() => {
+          setTimeout(() => { bar.style.height = (val * 0.9) + 'px'; }, 400);
+        });
+      });
+    }
+
+    /* ── 7. Temperature arc ───────────────────────────────────── */
+    const tempArc = document.getElementById('temp-arc');
+    if (tempArc) {
+      // 24°C → ~60% of 40°C max → dashoffset
+      setTimeout(() => {
+        const pct = 24 / 40; // 60%
+        const circumference = 220;
+        tempArc.style.strokeDashoffset = circumference * (1 - pct);
+      }, 600);
+    }
+
+    /* ── 8. Typewriter for weather description ─────────────────── */
+    const phrases = ['Partly Cloudy', 'Mild Breezes', 'Low Humidity', 'Clear Skies Tonight'];
+    let phraseIdx = 0, charIdx = 0, deleting = false;
+    const descEl = document.getElementById('weather-desc');
+    if (descEl) {
+      const typeLoop = () => {
+        const current = phrases[phraseIdx];
+        if (!deleting) {
+          descEl.textContent = current.slice(0, ++charIdx);
+          if (charIdx === current.length) {
+            deleting = true;
+            setTimeout(typeLoop, 2200);
+            return;
+          }
+        } else {
+          descEl.textContent = current.slice(0, --charIdx);
+          if (charIdx === 0) {
+            deleting = false;
+            phraseIdx = (phraseIdx + 1) % phrases.length;
+          }
+        }
+        setTimeout(typeLoop, deleting ? 60 : 90);
+      };
+      setTimeout(typeLoop, 1000);
+    }
+
+    /* ── 9. Hourly strip ─────────────────────────────────────── */
+    const hourlyStrip = document.getElementById('hourly-strip');
+    const weatherIcons = ['⛅','🌤','☀️','🌤','⛅','🌧','⛈','🌧','⛅','🌤','☀️','🌤'];
+    const temps = [18,17,19,22,24,23,21,19,18,17,16,15];
+    const now = new Date();
+    if (hourlyStrip) {
+      for (let i = 0; i < 12; i++) {
+        const h = (now.getHours() + i) % 24;
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        const isNow = i === 0;
+
+        const card = document.createElement('div');
+        card.className = 'flex-shrink-0 flex flex-col items-center gap-2 px-4 py-3 rounded-2xl transition-all duration-300 cursor-default';
+        card.style.background = isNow ? 'rgba(74,144,217,0.15)' : 'rgba(200,216,240,0.04)';
+        card.style.border = isNow ? '1px solid rgba(74,144,217,0.3)' : '1px solid rgba(200,216,240,0.06)';
+        card.innerHTML = `
+          <div class="text-xs ${isNow ? 'text-sky font-semibold' : 'text-mist/50'}">${isNow ? 'Now' : h12 + ' ' + ampm}</div>
+          <div class="text-xl">${weatherIcons[i]}</div>
+          <div class="text-sm font-medium text-white">${temps[i]}°</div>
+        `;
+        hourlyStrip.appendChild(card);
+      }
+    }
+
+    /* ── 10. Atmospheric layers ──────────────────────────────── */
+    const layers = [
+      { name: 'Exosphere', range: '700–10,000 km', color: '#4a90d9', pct: 95, note: 'Satellites orbit here' },
+      { name: 'Thermosphere', range: '80–700 km', color: '#7fdbca', pct: 80, note: 'Auroras occur at 90–120 km' },
+      { name: 'Mesosphere', range: '50–80 km', color: '#8b9ab3', pct: 60, note: 'Meteors burn up here' },
+      { name: 'Stratosphere', range: '12–50 km', color: '#4a90d9', pct: 40, note: 'Ozone layer · Jets fly here' },
+      { name: 'Troposphere', range: '0–12 km', color: '#7fdbca', pct: 20, note: 'All weather happens here' },
+    ];
+    const atmContainer = document.getElementById('atm-layers');
+    if (atmContainer) {
+      layers.forEach((layer, i) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-4';
+        row.innerHTML = `
+          <div class="w-28 text-right flex-shrink-0">
+            <div class="text-xs font-medium text-white">${layer.name}</div>
+            <div class="text-xs text-mist/40">${layer.range}</div>
+          </div>
+          <div class="flex-1 h-2 rounded-full bg-white/5 overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-1000" style="width:0%;background:${layer.color};transition-delay:${i*0.15}s" data-width="${layer.pct}%"></div>
+          </div>
+          <div class="text-xs text-mist/40 w-40 hidden md:block">${layer.note}</div>
+        `;
+        atmContainer.appendChild(row);
+      });
+      // Animate bars
+      const barObs = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          document.querySelectorAll('#atm-layers [data-width]').forEach(bar => {
+            setTimeout(() => { bar.style.width = bar.dataset.width; }, 200);
+          });
+          barObs.disconnect();
+        }
+      }, { threshold: 0.3 });
+      barObs.observe(atmContainer);
+    }
+
+    /* ── 11. Beaufort scale ──────────────────────────────────── */
+    const beaufort = [
+      { f: 0, name: 'Calm', speed: '< 1 km/h' },
+      { f: 3, name: 'Gentle Breeze', speed: '12–19 km/h' },
+      { f: 5, name: 'Fresh Breeze', speed: '29–38 km/h' },
+      { f: 7, name: 'Near Gale', speed: '50–61 km/h' },
+      { f: 9, name: 'Severe Gale', speed: '75–88 km/h' },
+      { f: 12, name: 'Hurricane Force', speed: '≥ 118 km/h' },
+    ];
+    const bfContainer = document.getElementById('beaufort-scale');
+    if (bfContainer) {
+      beaufort.forEach(b => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-3';
+        const color = b.f >= 9 ? '#ef4444' : b.f >= 6 ? '#f59e0b' : b.f >= 3 ? '#4a90d9' : '#7fdbca';
+        row.innerHTML = `
+          <span class="text-xs font-bold w-5" style="color:${color}">F${b.f}</span>
+          <div class="flex-1 h-1 rounded-full bg-white/5 overflow-hidden">
+            <div class="h-full rounded-full" style="width:${(b.f/12)*100}%;background:${color}"></div>
+          </div>
+          <span class="text-xs text-white w-28 text-right">${b.name}</span>
+          <span class="text-xs text-mist/40 w-20 text-right hidden sm:block">${b.speed}</span>
+        `;
+        bfContainer.appendChild(row);
+      });
+    }
+
+    /* ── 12. Fun facts ────────────────────────────────────────── */
+    const facts = [
+      { icon: '☁️', stat: '2.5 billion', label: 'Lightning strikes Earth per year' },
+      { icon: '🌡', stat: '–89.2°C', label: 'Lowest recorded temperature (Vostok Station, 1983)' },
+      { icon: '💨', stat: '408 km/h', label: 'Fastest surface wind ever recorded (Barrow Island, 1996)' },
+    ];
+    const factContainer = document.getElementById('fact-cards');
+    if (factContainer) {
+      facts.forEach(f => {
+        const card = document.createElement('div');
+        card.className = 'flex items-start gap-4 p-4 rounded-2xl border border-white/5 bg-white/[0.02]';
+        card.innerHTML = `
+          <span class="text-2xl flex-shrink-0">${f.icon}</span>
+          <div>
+            <div class="text-white font-semibold text-lg leading-none mb-1">${f.stat}</div>
+            <div class="text-mist/50 text-xs leading-relaxed">${f.label}</div>
+          </div>
+        `;
+        factContainer.appendChild(card);
+      });
+    }
+
+    /* ── 13. Spotlight follow ─────────────────────────────────── */
+    document.querySelectorAll('.spotlight-card').forEach(card => {
+      const spot = card.querySelector('.spotlight');
+      if (!spot) return;
+      card.addEventListener('mousemove', e => {
+        const rect = card.getBoundingClientRect();
+        spot.style.left = (e.clientX - rect.left) + 'px';
+        spot.style.top  = (e.clientY - rect.top) + 'px';
+      });
+    });
+
+    /* ── 14. 3D tilt on phenomena cards ───────────────────────── */
+    document.querySelectorAll('.tilt-card').forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const rect = card.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = (e.clientX - cx) / (rect.width / 2);
+        const dy = (e.clientY - cy) / (rect.height / 2);
+        card.style.transform = `perspective(800px) rotateX(${-dy * 4}deg) rotateY(${dx * 4}deg) scale(1.02)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) scale(1)';
+        card.style.transition = 'transform 0.5s cubic-bezier(0.34,1.56,0.64,1)';
+      });
+    });
+
+    /* ── 15. Compass animate on scroll into view ─────────────── */
+    const compassWrap = document.getElementById('compass-wrap');
+    const compassNeedle = document.getElementById('compass-needle');
+    if (compassWrap && compassNeedle) {
+      const compObs = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          compassNeedle.style.transition = 'transform 2s cubic-bezier(0.34,1.56,0.64,1)';
+          compassNeedle.style.transform = 'rotate(220deg)';
+          compObs.disconnect();
+        }
+      }, { threshold: 0.5 });
+      compObs.observe(compassWrap);
+    }
+
+    /* ── 16. Nav active highlight on scroll ───────────────────── */
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('nav a[href^="#"]');
+    const activeObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          navLinks.forEach(a => {
+            a.classList.toggle('text-white', a.getAttribute('href') === '#' + e.target.id);
+            a.classList.toggle('text-mist', a.getAttribute('href') !== '#' + e.target.id);
+          });
+        }
+      });
+    }, { threshold: 0.4 });
+    sections.forEach(s => activeObs.observe(s));
+
+  })();
+  </script>
+</body>
+</html>

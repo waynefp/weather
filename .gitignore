@@ -1,0 +1,8 @@
+# Local assets too large for standard git
+*.mp4
+*.mov
+*.avi
+*.mkv
+
+# Claude Code local memory
+.claude/
