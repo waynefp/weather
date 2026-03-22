@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atmosphera — AI Forecast Briefing</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+            serif: ['DM Serif Display', 'serif'],
+          },
+          colors: {
+            ink: '#0d0f14',
+            mist: '#8b9ab3',
+            frost: '#c8d8f0',
+            sky: '#4a90d9',
+            aurora: '#7fdbca',
+            storm: '#4b5f7c',
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background-color: #0d0f14;
+      color: #e8edf5;
+      font-family: 'Outfit', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Grain */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 999; opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+
+    /* Mesh bg */
+    .mesh-bg {
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 20%, rgba(74,144,217,0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 60% at 80% 80%, rgba(127,219,202,0.06) 0%, transparent 60%),
+        #0d0f14;
+      pointer-events: none;
+    }
+
+    /* Nav glass */
+    .nav-glass {
+      background: rgba(13,15,20,0.6);
+      backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid rgba(200,216,240,0.06);
+    }
+
+    /* Bento card */
+    .bento-card {
+      background: rgba(26,30,40,0.6);
+      border: 1px solid rgba(200,216,240,0.07);
+      border-radius: 2rem;
+      backdrop-filter: blur(12px);
+      overflow: hidden;
+      position: relative;
+    }
+    .bento-card::before {
+      content: '';
+      position: absolute; inset: 0; border-radius: inherit;
+      background: linear-gradient(135deg, rgba(200,216,240,0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Tag */
+    .tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 0.7rem; font-weight: 500; letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border: 1px solid rgba(200,216,240,0.12);
+      background: rgba(200,216,240,0.04); color: #8b9ab3;
+    }
+
+    .section-label {
+      font-size: 0.68rem; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase; color: #4a90d9;
+    }
+
+    /* LIVE badge */
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 999px;
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.25);
+      font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase; color: #ef4444;
+    }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #ef4444; animation: blink 1s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    /* Gradient text */
+    .grad-blue {
+      background: linear-gradient(135deg, #e8edf5 0%, #4a90d9 60%, #7fdbca 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    /* Teleprompter */
+    .teleprompter-wrap {
+      position: relative;
+      overflow: hidden;
+    }
+    .teleprompter-fade-top {
+      position: absolute; top: 0; left: 0; right: 0; height: 60px; z-index: 2;
+      background: linear-gradient(to bottom, rgba(26,30,40,1), transparent);
+      pointer-events: none;
+    }
+    .teleprompter-fade-bottom {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 60px; z-index: 2;
+      background: linear-gradient(to top, rgba(26,30,40,1), transparent);
+      pointer-events: none;
+    }
+    #teleprompter-text {
+      line-height: 1.9;
+      font-size: 1.1rem;
+      font-weight: 300;
+      color: rgba(232,237,245,0.75);
+    }
+    #teleprompter-text .word {
+      display: inline;
+      transition: color 0.2s ease, text-shadow 0.2s ease;
+    }
+    #teleprompter-text .word.active {
+      color: #fff;
+      text-shadow: 0 0 20px rgba(74,144,217,0.5);
+    }
+    #teleprompter-text .word.done {
+      color: rgba(232,237,245,0.35);
+    }
+
+    /* Segment tabs */
+    .seg-tab {
+      padding: 6px 14px; border-radius: 999px; font-size: 0.75rem; font-weight: 500;
+      border: 1px solid rgba(200,216,240,0.08);
+      background: rgba(200,216,240,0.03);
+      color: #8b9ab3; cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .seg-tab:hover { border-color: rgba(74,144,217,0.3); color: #e8edf5; }
+    .seg-tab.active {
+      background: rgba(74,144,217,0.15);
+      border-color: rgba(74,144,217,0.4);
+      color: #4a90d9;
+    }
+
+    /* Progress bar */
+    #progress-bar {
+      height: 2px;
+      background: linear-gradient(90deg, #4a90d9, #7fdbca);
+      border-radius: 1px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    /* Play button */
+    .play-btn {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: rgba(74,144,217,0.15);
+      border: 1px solid rgba(74,144,217,0.3);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.25s ease;
+    }
+    .play-btn:hover {
+      background: rgba(74,144,217,0.25);
+      border-color: rgba(74,144,217,0.6);
+      transform: scale(1.05);
+    }
+
+    /* Weather stat pill */
+    .stat-pill {
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 12px 16px; border-radius: 1rem;
+      background: rgba(200,216,240,0.04);
+      border: 1px solid rgba(200,216,240,0.07);
+    }
+
+    /* JSON viewer */
+    #json-viewer {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.72rem;
+      line-height: 1.6;
+      color: #7fdbca;
+      white-space: pre;
+      overflow-x: auto;
+      max-height: 300px;
+    }
+
+    /* Webhook input */
+    .webhook-input {
+      background: rgba(200,216,240,0.04);
+      border: 1px solid rgba(200,216,240,0.1);
+      border-radius: 0.75rem;
+      color: #e8edf5;
+      font-size: 0.85rem;
+      padding: 10px 14px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+    .webhook-input::placeholder { color: rgba(139,154,179,0.5); }
+    .webhook-input:focus { border-color: rgba(74,144,217,0.4); }
+
+    /* Action button */
+    .action-btn {
+      display: inline-flex; align-items: center; gap-2: 8px; gap: 8px;
+      padding: 10px 20px; border-radius: 0.75rem;
+      font-size: 0.82rem; font-weight: 500; cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .action-btn-primary {
+      background: rgba(74,144,217,0.15);
+      border: 1px solid rgba(74,144,217,0.3);
+      color: #4a90d9;
+    }
+    .action-btn-primary:hover {
+      background: rgba(74,144,217,0.25);
+      border-color: rgba(74,144,217,0.5);
+      transform: translateY(-1px);
+    }
+    .action-btn-ghost {
+      background: rgba(200,216,240,0.04);
+      border: 1px solid rgba(200,216,240,0.1);
+      color: #8b9ab3;
+    }
+    .action-btn-ghost:hover {
+      border-color: rgba(200,216,240,0.2);
+      color: #e8edf5;
+      transform: translateY(-1px);
+    }
+    .action-btn-success {
+      background: rgba(127,219,202,0.15);
+      border: 1px solid rgba(127,219,202,0.3);
+      color: #7fdbca;
+    }
+
+    /* Weather icon map (WMO codes → emoji) */
+    /* Used inline by JS */
+
+    /* Forecast week row */
+    .week-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(200,216,240,0.05);
+    }
+    .week-row:last-child { border-bottom: none; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #0d0f14; }
+    ::-webkit-scrollbar-thumb { background: #1a1e28; border-radius: 2px; }
+
+    /* Reveal */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* HeyGen placeholder */
+    .avatar-placeholder {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px;
+      min-height: 260px;
+      border: 1px dashed rgba(74,144,217,0.2);
+      border-radius: 1.5rem;
+      background: rgba(74,144,217,0.03);
+    }
+
+    /* Loading state */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 2px solid rgba(74,144,217,0.2);
+      border-top-color: #4a90d9;
+      animation: spin 0.7s linear infinite;
+    }
+  </style>
+</head>
+<body>
+<div class="mesh-bg"></div>
+
+<!-- ── NAV ── -->
+<nav class="nav-glass fixed top-0 left-0 right-0 z-50">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <a href="index.html" class="flex items-center gap-2 text-mist hover:text-white transition-colors text-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Back
+      </a>
+      <div class="w-px h-4 bg-white/10"></div>
+      <span class="font-serif text-lg text-white">Atmosphera</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="live-badge" id="nav-live-badge" style="display:none">
+        <div class="live-dot"></div>
+        On Air
+      </div>
+      <span class="tag" id="nav-location">—</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ── LOADING STATE ── -->
+<div id="loading-screen" class="fixed inset-0 z-40 flex flex-col items-center justify-center gap-6" style="background:#0d0f14">
+  <div class="relative">
+    <div class="spinner" style="width:40px;height:40px;border-width:3px"></div>
+  </div>
+  <div class="text-center">
+    <div class="section-label mb-2">Generating Briefing</div>
+    <p class="text-mist text-sm" id="loading-msg">Fetching live forecast data...</p>
+  </div>
+</div>
+
+<!-- ── MAIN CONTENT (hidden until data loaded) ── -->
+<main id="main-content" class="relative z-10 pt-24 pb-20 px-4 md:px-8 lg:px-16" style="display:none">
+  <div class="max-w-7xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12 reveal">
+      <div>
+        <div class="section-label mb-2">AI Forecast Briefing</div>
+        <h1 class="font-serif text-4xl md:text-5xl grad-blue" id="page-title">Weather Briefing</h1>
+        <p class="text-mist/50 text-sm mt-2" id="generated-time">—</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="live-badge">
+          <div class="live-dot"></div>
+          On Air
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MAIN GRID ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+
+      <!-- LEFT: Teleprompter (2/3 width) -->
+      <div class="lg:col-span-2 bento-card p-6 reveal" style="transition-delay:0.1s">
+        <!-- Segment tabs -->
+        <div class="flex flex-wrap gap-2 mb-5" id="seg-tabs"></div>
+
+        <!-- Progress -->
+        <div class="w-full h-0.5 bg-white/5 rounded-full mb-5 overflow-hidden">
+          <div id="progress-bar"></div>
+        </div>
+
+        <!-- Teleprompter display -->
+        <div class="teleprompter-wrap" style="height:220px">
+          <div class="teleprompter-fade-top"></div>
+          <div class="teleprompter-fade-bottom"></div>
+          <div class="overflow-auto h-full px-1 py-6" id="teleprompter-scroll">
+            <p id="teleprompter-text" class="text-mist/60 italic text-sm">Loading briefing script...</p>
+          </div>
+        </div>
+
+        <!-- Playback controls -->
+        <div class="flex items-center gap-4 mt-5 pt-5 border-t border-white/5">
+          <button class="play-btn" id="play-btn" title="Play / Pause">
+            <svg id="play-icon" class="w-5 h-5 text-sky ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            <svg id="pause-icon" class="w-5 h-5 text-sky hidden" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+            </svg>
+          </button>
+          <div class="flex-1">
+            <div class="text-white text-sm font-medium" id="current-seg-label">—</div>
+            <div class="text-mist/40 text-xs" id="current-seg-time">0s</div>
+          </div>
+          <button class="action-btn action-btn-ghost text-xs" id="restart-btn">Restart</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Today's stats -->
+      <div class="bento-card p-6 flex flex-col gap-4 reveal" style="transition-delay:0.15s">
+        <div class="tag">Conditions</div>
+
+        <!-- Main temp -->
+        <div class="flex items-end gap-2">
+          <span class="font-serif text-6xl grad-blue" id="stat-temp">—</span>
+          <span class="text-mist/60 text-2xl pb-2">°C</span>
+          <span class="text-3xl ml-2" id="stat-icon">—</span>
+        </div>
+        <div class="text-white/70 text-sm -mt-2" id="stat-desc">—</div>
+
+        <!-- Pills grid -->
+        <div class="grid grid-cols-2 gap-2 mt-1">
+          <div class="stat-pill">
+            <span class="text-mist/50 text-xs">High / Low</span>
+            <span class="text-white text-sm font-medium" id="stat-hilo">— / —</span>
+          </div>
+          <div class="stat-pill">
+            <span class="text-mist/50 text-xs">Wind</span>
+            <span class="text-white text-sm font-medium" id="stat-wind">— km/h</span>
+          </div>
+          <div class="stat-pill">
+            <span class="text-mist/50 text-xs">Precipitation</span>
+            <span class="text-white text-sm font-medium" id="stat-precip">— mm</span>
+          </div>
+          <div class="stat-pill">
+            <span class="text-mist/50 text-xs">Rain Chance</span>
+            <span class="text-white text-sm font-medium" id="stat-rain-pct">—%</span>
+          </div>
+        </div>
+
+        <!-- 7-day mini forecast -->
+        <div class="mt-2">
+          <div class="text-xs text-mist/40 mb-3 uppercase tracking-wider">7-Day Outlook</div>
+          <div id="week-forecast"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BOTTOM ROW: Avatar placeholder + Export ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+      <!-- HeyGen Avatar panel -->
+      <div class="bento-card p-6 reveal" style="transition-delay:0.2s">
+        <div class="flex items-center justify-between mb-5">
+          <div class="tag">Meteorologist Avatar</div>
+          <span class="text-xs text-mist/30 italic">HeyGen · Coming soon</span>
+        </div>
+        <div id="avatar-container">
+          <div class="avatar-placeholder">
+            <svg class="w-12 h-12 text-sky/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+            </svg>
+            <p class="text-mist/40 text-sm text-center px-6">Avatar video will appear here once<br/>the n8n pipeline delivers it.</p>
+          </div>
+        </div>
+        <!-- When a video URL is stored, it surfaces here automatically -->
+        <div id="avatar-video-wrap" class="hidden mt-4">
+          <video id="avatar-video" controls class="w-full rounded-2xl" style="background:#000"></video>
+        </div>
+      </div>
+
+      <!-- Export / n8n panel -->
+      <div class="bento-card p-6 reveal" style="transition-delay:0.25s">
+        <div class="tag mb-5">Pipeline Export</div>
+
+        <!-- Webhook send -->
+        <div class="mb-5">
+          <div class="text-xs text-mist/50 mb-2 uppercase tracking-wider">n8n Webhook URL</div>
+          <div class="flex gap-2">
+            <input type="url" id="webhook-url" class="webhook-input" placeholder="https://your-n8n.com/webhook/..." />
+            <button class="action-btn action-btn-primary flex-shrink-0" id="send-webhook-btn">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+              Send
+            </button>
+          </div>
+          <p id="webhook-status" class="text-xs mt-2 text-mist/40"></p>
+        </div>
+
+        <!-- Divider -->
+        <div class="flex items-center gap-3 my-4">
+          <div class="flex-1 h-px bg-white/5"></div>
+          <span class="text-xs text-mist/30">or</span>
+          <div class="flex-1 h-px bg-white/5"></div>
+        </div>
+
+        <!-- JSON viewer -->
+        <div class="text-xs text-mist/40 mb-2 uppercase tracking-wider">Payload Preview</div>
+        <div class="rounded-xl bg-black/30 border border-white/5 p-4 mb-4 overflow-hidden">
+          <pre id="json-viewer">Loading...</pre>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-wrap gap-2">
+          <button class="action-btn action-btn-ghost" id="copy-json-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            Copy JSON
+          </button>
+          <button class="action-btn action-btn-ghost" id="download-json-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Download
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ── ERROR STATE ── -->
+<div id="error-screen" class="fixed inset-0 z-40 flex flex-col items-center justify-center gap-4 px-6 text-center" style="display:none;background:#0d0f14">
+  <svg class="w-12 h-12 text-mist/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+  <div>
+    <div class="section-label mb-2">Unable to Generate Briefing</div>
+    <p class="text-mist/60 text-sm mb-6" id="error-msg">Something went wrong. Please try again.</p>
+    <a href="index.html" class="action-btn action-btn-primary">Back to Atmosphera</a>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ── WMO weather code → { label, emoji } ──────────────────────────
+  const WMO = {
+    0:  { label: 'Clear Sky',          emoji: '☀️' },
+    1:  { label: 'Mainly Clear',       emoji: '🌤' },
+    2:  { label: 'Partly Cloudy',      emoji: '⛅' },
+    3:  { label: 'Overcast',           emoji: '☁️' },
+    45: { label: 'Foggy',              emoji: '🌫' },
+    48: { label: 'Icy Fog',            emoji: '🌫' },
+    51: { label: 'Light Drizzle',      emoji: '🌦' },
+    61: { label: 'Light Rain',         emoji: '🌧' },
+    63: { label: 'Moderate Rain',      emoji: '🌧' },
+    65: { label: 'Heavy Rain',         emoji: '🌧' },
+    71: { label: 'Light Snow',         emoji: '🌨' },
+    73: { label: 'Moderate Snow',      emoji: '❄️' },
+    75: { label: 'Heavy Snow',         emoji: '❄️' },
+    80: { label: 'Rain Showers',       emoji: '🌦' },
+    81: { label: 'Rain Showers',       emoji: '🌦' },
+    82: { label: 'Violent Showers',    emoji: '⛈' },
+    85: { label: 'Snow Showers',       emoji: '🌨' },
+    95: { label: 'Thunderstorm',       emoji: '⛈' },
+    96: { label: 'Thunderstorm + Hail',emoji: '⛈' },
+    99: { label: 'Thunderstorm + Hail',emoji: '⛈' },
+  };
+  const wmo = code => WMO[code] ?? { label: 'Unknown', emoji: '🌡' };
+
+  const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  // ── DOM refs ────────────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+  const loadingScreen = $('loading-screen');
+  const loadingMsg    = $('loading-msg');
+  const mainContent   = $('main-content');
+  const errorScreen   = $('error-screen');
+  const errorMsg      = $('error-msg');
+
+  // ── Utility: show screens ────────────────────────────────────────
+  const showMain = () => {
+    loadingScreen.style.display = 'none';
+    mainContent.style.display = 'block';
+    $('nav-live-badge').style.display = 'inline-flex';
+    // Trigger scroll reveals
+    requestAnimationFrame(() => {
+      const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+    });
+  };
+
+  const showError = msg => {
+    loadingScreen.style.display = 'none';
+    errorScreen.style.display = 'flex';
+    errorMsg.textContent = msg;
+  };
+
+  // ── Teleprompter state ──────────────────────────────────────────
+  let tpWords = [];
+  let tpWordEls = [];
+  let tpIndex = 0;
+  let tpInterval = null;
+  let isPlaying = false;
+  let currentSegIdx = 0;
+  let segBoundaries = []; // [{start, end, id, label}]
+
+  const WPM = 150; // words per minute for narration speed
+  const MS_PER_WORD = (60 / WPM) * 1000;
+
+  function buildTeleprompter(script) {
+    const container = $('teleprompter-text');
+    container.innerHTML = '';
+
+    tpWords = script.full_text.split(/\s+/).filter(Boolean);
+    tpWordEls = tpWords.map((word, i) => {
+      const span = document.createElement('span');
+      span.className = 'word';
+      span.textContent = word + ' ';
+      span.dataset.idx = i;
+      container.appendChild(span);
+      return span;
+    });
+
+    // Build segment boundaries based on text content
+    segBoundaries = [];
+    let charCount = 0;
+    let wordIdx = 0;
+    script.segments.forEach(seg => {
+      const segWords = seg.text.split(/\s+/).filter(Boolean).length;
+      const start = wordIdx;
+      const end = Math.min(wordIdx + segWords, tpWords.length);
+      segBoundaries.push({ start, end, id: seg.id, label: capitalize(seg.id), duration: seg.duration_hint });
+      wordIdx = end;
+      charCount += seg.text.length;
+    });
+
+    buildSegTabs(script.segments);
+    updateSegLabel(0);
+  }
+
+  function buildSegTabs(segments) {
+    const container = $('seg-tabs');
+    container.innerHTML = '';
+    segments.forEach((seg, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'seg-tab' + (i === 0 ? ' active' : '');
+      btn.textContent = capitalize(seg.id);
+      btn.dataset.idx = i;
+      btn.addEventListener('click', () => jumpToSeg(i));
+      container.appendChild(btn);
+    });
+  }
+
+  function jumpToSeg(segIdx) {
+    if (!segBoundaries[segIdx]) return;
+    tpIndex = segBoundaries[segIdx].start;
+    currentSegIdx = segIdx;
+    renderTeleprompterState();
+    updateSegLabel(tpIndex);
+    updateProgress();
+    scrollToWord(tpIndex);
+  }
+
+  function renderTeleprompterState() {
+    tpWordEls.forEach((el, i) => {
+      el.className = 'word ' + (i < tpIndex ? 'done' : i === tpIndex ? 'active' : '');
+    });
+  }
+
+  function scrollToWord(idx) {
+    const el = tpWordEls[idx];
+    if (!el) return;
+    const scrollEl = $('teleprompter-scroll');
+    const elTop = el.offsetTop;
+    const center = scrollEl.clientHeight / 2;
+    scrollEl.scrollTo({ top: elTop - center, behavior: 'smooth' });
+  }
+
+  function updateProgress() {
+    const pct = tpWords.length ? (tpIndex / tpWords.length) * 100 : 0;
+    $('progress-bar').style.width = pct + '%';
+  }
+
+  function updateSegLabel(wordIdx) {
+    const seg = segBoundaries.find(s => wordIdx >= s.start && wordIdx < s.end);
+    if (seg) {
+      $('current-seg-label').textContent = seg.label;
+      const wordsIn = wordIdx - seg.start;
+      const secsIn = Math.round((wordsIn / WPM) * 60);
+      $('current-seg-time').textContent = secsIn + 's';
+      // Update tabs
+      document.querySelectorAll('.seg-tab').forEach((tab, i) => {
+        tab.classList.toggle('active', segBoundaries[i]?.id === seg.id);
+      });
+    }
+  }
+
+  function startPlayback() {
+    if (tpIndex >= tpWords.length) tpIndex = 0;
+    isPlaying = true;
+    $('play-icon').classList.add('hidden');
+    $('pause-icon').classList.remove('hidden');
+    tpInterval = setInterval(() => {
+      if (tpIndex >= tpWords.length) {
+        stopPlayback();
+        return;
+      }
+      renderTeleprompterState();
+      scrollToWord(tpIndex);
+      updateProgress();
+      updateSegLabel(tpIndex);
+      tpIndex++;
+    }, MS_PER_WORD);
+  }
+
+  function stopPlayback() {
+    isPlaying = false;
+    clearInterval(tpInterval);
+    $('play-icon').classList.remove('hidden');
+    $('pause-icon').classList.add('hidden');
+  }
+
+  $('play-btn').addEventListener('click', () => isPlaying ? stopPlayback() : startPlayback());
+  $('restart-btn').addEventListener('click', () => { stopPlayback(); tpIndex = 0; renderTeleprompterState(); updateProgress(); scrollToWord(0); });
+
+  // ── Populate stats panel ────────────────────────────────────────
+  function populateStats(payload) {
+    const f = payload.raw_forecast;
+    const today = f.daily;
+    const hourly = f.hourly;
+
+    // Main temp (first hourly reading)
+    const currentTemp = hourly?.temperature_2m?.[0] ?? today?.temperature_2m_max?.[0] ?? '—';
+    const code = today?.weathercode?.[0] ?? 0;
+    const w = wmo(code);
+
+    $('stat-temp').textContent = Math.round(currentTemp);
+    $('stat-icon').textContent = w.emoji;
+    $('stat-desc').textContent = w.label;
+    $('stat-hilo').textContent = `${Math.round(today.temperature_2m_max?.[0])}° / ${Math.round(today.temperature_2m_min?.[0])}°`;
+    $('stat-wind').textContent = `${today.windspeed_10m_max?.[0] ?? '—'} km/h`;
+    $('stat-precip').textContent = `${today.precipitation_sum?.[0] ?? 0} mm`;
+
+    // Max precipitation probability today
+    const maxPrecip = hourly?.precipitation_probability?.slice(0,24)
+      ? Math.max(...hourly.precipitation_probability.slice(0,24))
+      : '—';
+    $('stat-rain-pct').textContent = maxPrecip + '%';
+
+    // 7-day
+    const weekEl = $('week-forecast');
+    weekEl.innerHTML = '';
+    const baseDate = new Date();
+    for (let i = 1; i <= 6; i++) {
+      const d = new Date(baseDate); d.setDate(d.getDate() + i);
+      const dayName = DAY_NAMES[d.getDay()];
+      const hi = Math.round(today.temperature_2m_max?.[i] ?? 0);
+      const lo = Math.round(today.temperature_2m_min?.[i] ?? 0);
+      const wDay = wmo(today.weathercode?.[i] ?? 0);
+      weekEl.innerHTML += `
+        <div class="week-row">
+          <span class="text-mist/60 text-xs w-8">${dayName}</span>
+          <span class="text-lg">${wDay.emoji}</span>
+          <span class="text-xs text-mist/50 flex-1 ml-2">${wDay.label}</span>
+          <span class="text-white text-xs font-medium">${hi}° <span class="text-mist/40">${lo}°</span></span>
+        </div>`;
+    }
+  }
+
+  // ── Populate export panel ────────────────────────────────────────
+  function populateExport(payload) {
+    // Trim raw_forecast from the preview to keep it readable
+    const preview = { ...payload, raw_forecast: '{ ... omitted for brevity ... }' };
+    $('json-viewer').textContent = JSON.stringify(preview, null, 2);
+
+    $('copy-json-btn').addEventListener('click', () => {
+      navigator.clipboard.writeText(JSON.stringify(payload, null, 2)).then(() => {
+        $('copy-json-btn').innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Copied!`;
+        $('copy-json-btn').className = 'action-btn action-btn-success';
+        setTimeout(() => {
+          $('copy-json-btn').innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg> Copy JSON`;
+          $('copy-json-btn').className = 'action-btn action-btn-ghost';
+        }, 2500);
+      });
+    });
+
+    $('download-json-btn').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url;
+      a.download = `atmosphera-briefing-${payload.location.replace(/[^a-z0-9]/gi,'_').toLowerCase()}.json`;
+      a.click(); URL.revokeObjectURL(url);
+    });
+
+    // Restore saved webhook URL
+    const savedUrl = localStorage.getItem('atmosphera_webhook_url');
+    if (savedUrl) $('webhook-url').value = savedUrl;
+
+    $('send-webhook-btn').addEventListener('click', async () => {
+      const url = $('webhook-url').value.trim();
+      if (!url) { $('webhook-status').textContent = 'Please enter a webhook URL first.'; return; }
+      localStorage.setItem('atmosphera_webhook_url', url);
+      $('webhook-status').textContent = 'Sending...';
+      try {
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          mode: 'no-cors', // n8n webhooks don't always return CORS headers
+        });
+        $('webhook-status').textContent = '✓ Payload sent to webhook.';
+        $('webhook-status').style.color = '#7fdbca';
+      } catch (err) {
+        $('webhook-status').textContent = 'Failed to reach webhook: ' + err.message;
+        $('webhook-status').style.color = '#f87171';
+      }
+    });
+  }
+
+  // ── Check for a video URL stored by n8n callback ─────────────────
+  function checkAvatarVideo() {
+    const videoUrl = localStorage.getItem('atmosphera_avatar_video');
+    if (videoUrl) {
+      $('avatar-container').style.display = 'none';
+      $('avatar-video-wrap').classList.remove('hidden');
+      $('avatar-video').src = videoUrl;
+    }
+  }
+
+  // ── Utility ──────────────────────────────────────────────────────
+  const capitalize = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+  // ── Main orchestration ───────────────────────────────────────────
+  async function init() {
+    // Read the briefing payload from sessionStorage
+    const raw = sessionStorage.getItem('atmosphera_briefing');
+    if (!raw) {
+      showError('No briefing data found. Please generate one from the main page.');
+      return;
+    }
+
+    let payload;
+    try {
+      payload = JSON.parse(raw);
+    } catch {
+      showError('Briefing data was corrupted. Please try again.');
+      return;
+    }
+
+    // Populate nav
+    $('nav-location').textContent = payload.location;
+
+    // Populate page header
+    $('page-title').textContent = payload.location + ' — Forecast Briefing';
+    const ts = new Date(payload.generated_at);
+    $('generated-time').textContent = 'Generated ' + ts.toLocaleString();
+
+    // Build teleprompter
+    buildTeleprompter(payload.script);
+
+    // Populate stats
+    populateStats(payload);
+
+    // Populate export
+    populateExport(payload);
+
+    // Check for avatar video
+    checkAvatarVideo();
+
+    showMain();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
