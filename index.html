@@ -1343,6 +1343,25 @@
     const geoBtn     = document.getElementById('briefing-geolocate-btn');
     const statusEl   = document.getElementById('briefing-status');
 
+    // ── Detect user's preferred temperature unit by timezone ───────
+    const US_TIMEZONES = new Set([
+      'America/New_York','America/Detroit','America/Kentucky/Louisville',
+      'America/Kentucky/Monticello','America/Indiana/Indianapolis',
+      'America/Indiana/Vincennes','America/Indiana/Winamac',
+      'America/Indiana/Marengo','America/Indiana/Petersburg',
+      'America/Indiana/Vevay','America/Chicago','America/Indiana/Tell_City',
+      'America/Indiana/Knox','America/Menominee','America/North_Dakota/Center',
+      'America/North_Dakota/New_Salem','America/North_Dakota/Beulah',
+      'America/Denver','America/Boise','America/Phoenix',
+      'America/Los_Angeles','America/Anchorage','America/Juneau',
+      'America/Sitka','America/Metlakatla','America/Yakutat',
+      'America/Nome','America/Adak','Pacific/Honolulu',
+    ]);
+    const userTZ   = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const isUS     = US_TIMEZONES.has(userTZ);
+    const tempUnit = isUS ? 'fahrenheit' : 'celsius';
+    const windUnit = isUS ? 'mph' : 'kmh';
+
     const setStatus = (msg, isErr = false) => {
       statusEl.textContent = msg;
       statusEl.style.color = isErr ? '#f87171' : 'rgba(139,154,179,0.5)';
@@ -1356,7 +1375,9 @@
 
     // ── Step 1: Geocode city name → lat/lon via Open-Meteo ─────────
     async function geocode(city) {
-      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`;
+      // Open-Meteo geocoder doesn't handle "City, State" — use only the city part
+      const searchTerm = city.split(',')[0].trim();
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchTerm)}&count=1&language=en&format=json`;
       const res = await fetch(url);
       const data = await res.json();
       if (!data.results?.length) throw new Error(`Location "${city}" not found`);
@@ -1371,6 +1392,8 @@
         longitude: lon,
         hourly: 'temperature_2m,weathercode,windspeed_10m,precipitation_probability',
         daily: 'weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max',
+        temperature_unit: tempUnit,
+        windspeed_unit: windUnit,
         timezone: 'auto',
         forecast_days: 7,
       });
@@ -1384,7 +1407,7 @@
       const res = await fetch('/api/briefing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ location, forecast }),
+        body: JSON.stringify({ location, forecast, unit: tempUnit }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));

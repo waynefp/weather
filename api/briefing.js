@@ -17,11 +17,16 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { location, forecast } = req.body;
+  const { location, forecast, unit = 'celsius' } = req.body;
 
   if (!location || !forecast) {
     return res.status(400).json({ error: 'Missing location or forecast data' });
   }
+
+  const isImperial = unit === 'fahrenheit';
+  const tempLabel  = isImperial ? 'Fahrenheit' : 'Celsius';
+  const tempSym    = isImperial ? '°F' : '°C';
+  const windLabel  = isImperial ? 'mph' : 'km/h';
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -53,12 +58,14 @@ export default async function handler(req, res) {
       precipitation_mm: today.precipitation_sum?.[i + 1],
     })),
     next_12h_precip_pct: hourly.precipitation_probability?.slice(0, 12),
+    next_12h_temps: hourly.temperature_2m?.slice(0, 12),
   };
 
   const systemPrompt = `You are a professional TV meteorologist delivering a live on-air weather forecast.
 Your tone is warm, authoritative, and engaging — like a trusted local broadcaster.
 Use natural spoken language with smooth transitions between segments.
 Never say "percent" as a number symbol — always write it out.
+Always use ${tempLabel} (${tempSym}) for temperatures and ${windLabel} for wind speeds.
 Do not use markdown. Return ONLY valid JSON matching this exact structure:
 
 {
@@ -92,7 +99,7 @@ Weather code reference: 0=Clear, 1-3=Partly Cloudy, 45-48=Fog, 51-67=Drizzle/Rai
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1024,
+        max_tokens: 2048,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
       }),
@@ -119,6 +126,8 @@ Weather code reference: 0=Clear, 1-3=Partly Cloudy, 45-48=Fog, 51-67=Drizzle/Rai
     const payload = {
       location,
       generated_at: new Date().toISOString(),
+      unit,
+      temp_symbol: tempSym,
       script,
       raw_forecast: forecast,
     };

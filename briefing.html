@@ -131,10 +131,12 @@
       pointer-events: none;
     }
     #teleprompter-text {
-      line-height: 1.9;
-      font-size: 1.1rem;
+      line-height: 2.1;
+      font-size: 1.3rem;
       font-weight: 300;
       color: rgba(232,237,245,0.75);
+      max-width: 72ch;
+      margin: 0 auto;
     }
     #teleprompter-text .word {
       display: inline;
@@ -347,54 +349,85 @@
       </div>
     </div>
 
-    <!-- ── MAIN GRID ── -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+    <!-- ── TELEPROMPTER: Full width ── -->
+    <div class="bento-card p-8 md:p-10 mb-4 reveal" style="transition-delay:0.1s">
 
-      <!-- LEFT: Teleprompter (2/3 width) -->
-      <div class="lg:col-span-2 bento-card p-6 reveal" style="transition-delay:0.1s">
-        <!-- Segment tabs -->
-        <div class="flex flex-wrap gap-2 mb-5" id="seg-tabs"></div>
+      <!-- Top row: segment tabs + audio controls -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div class="flex flex-wrap gap-2" id="seg-tabs"></div>
 
-        <!-- Progress -->
-        <div class="w-full h-0.5 bg-white/5 rounded-full mb-5 overflow-hidden">
-          <div id="progress-bar"></div>
-        </div>
-
-        <!-- Teleprompter display -->
-        <div class="teleprompter-wrap" style="height:220px">
-          <div class="teleprompter-fade-top"></div>
-          <div class="teleprompter-fade-bottom"></div>
-          <div class="overflow-auto h-full px-1 py-6" id="teleprompter-scroll">
-            <p id="teleprompter-text" class="text-mist/60 italic text-sm">Loading briefing script...</p>
+        <!-- ElevenLabs audio -->
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <div class="flex flex-col gap-1">
+            <select id="voice-select" class="webhook-input" style="width:auto;padding:6px 10px;font-size:0.75rem">
+              <option value="">Loading your voices…</option>
+            </select>
+            <select id="model-select" class="webhook-input" style="width:auto;padding:6px 10px;font-size:0.75rem">
+              <option value="eleven_multilingual_v2">Multilingual v2 — Best Quality</option>
+              <option value="eleven_turbo_v2_5">Turbo v2.5 — Fast</option>
+              <option value="eleven_turbo_v2">Turbo v2</option>
+            </select>
           </div>
-        </div>
-
-        <!-- Playback controls -->
-        <div class="flex items-center gap-4 mt-5 pt-5 border-t border-white/5">
-          <button class="play-btn" id="play-btn" title="Play / Pause">
-            <svg id="play-icon" class="w-5 h-5 text-sky ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-            <svg id="pause-icon" class="w-5 h-5 text-sky hidden" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-            </svg>
-          </button>
-          <div class="flex-1">
-            <div class="text-white text-sm font-medium" id="current-seg-label">—</div>
-            <div class="text-mist/40 text-xs" id="current-seg-time">0s</div>
+          <div class="flex flex-col gap-1">
+            <button class="action-btn action-btn-primary" id="gen-audio-btn">
+              <svg id="audio-play-ico" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
+              <div id="audio-spinner" class="spinner hidden" style="width:14px;height:14px;border-width:2px"></div>
+              <span id="audio-btn-label">Generate Audio</span>
+            </button>
+            <p id="audio-error" class="text-xs text-red-400 hidden"></p>
           </div>
-          <button class="action-btn action-btn-ghost text-xs" id="restart-btn">Restart</button>
         </div>
       </div>
 
-      <!-- RIGHT: Today's stats -->
+      <!-- Audio player (shown once audio is ready) -->
+      <div id="audio-player-wrap" class="hidden mb-6">
+        <audio id="audio-player" controls class="w-full" style="height:36px;border-radius:0.5rem;accent-color:#4a90d9"></audio>
+        <p class="text-xs text-mist/40 mt-1">Audio and teleprompter scroll are synced at start — play both together for best experience.</p>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="w-full h-0.5 bg-white/5 rounded-full mb-6 overflow-hidden">
+        <div id="progress-bar"></div>
+      </div>
+
+      <!-- Teleprompter display — tall, generous padding -->
+      <div class="teleprompter-wrap" style="height:460px">
+        <div class="teleprompter-fade-top"></div>
+        <div class="teleprompter-fade-bottom"></div>
+        <div class="overflow-auto h-full px-6 md:px-12 py-10" id="teleprompter-scroll">
+          <p id="teleprompter-text" class="text-mist/60 italic text-sm">Loading briefing script...</p>
+        </div>
+      </div>
+
+      <!-- Playback controls -->
+      <div class="flex items-center gap-4 mt-6 pt-6 border-t border-white/5">
+        <button class="play-btn" id="play-btn" title="Play / Pause">
+          <svg id="play-icon" class="w-5 h-5 text-sky ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+          <svg id="pause-icon" class="w-5 h-5 text-sky hidden" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+          </svg>
+        </button>
+        <div class="flex-1">
+          <div class="text-white text-sm font-medium" id="current-seg-label">—</div>
+          <div class="text-mist/40 text-xs" id="current-seg-time">0s</div>
+        </div>
+        <button class="action-btn action-btn-ghost text-xs" id="restart-btn">Restart</button>
+      </div>
+    </div>
+
+    <!-- ── BOTTOM GRID: Stats | Avatar | Export ── -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+
+      <!-- Today's stats -->
       <div class="bento-card p-6 flex flex-col gap-4 reveal" style="transition-delay:0.15s">
         <div class="tag">Conditions</div>
 
         <!-- Main temp -->
         <div class="flex items-end gap-2">
           <span class="font-serif text-6xl grad-blue" id="stat-temp">—</span>
-          <span class="text-mist/60 text-2xl pb-2">°C</span>
+          <span class="text-mist/60 text-2xl pb-2" id="stat-temp-unit">°</span>
           <span class="text-3xl ml-2" id="stat-icon">—</span>
         </div>
         <div class="text-white/70 text-sm -mt-2" id="stat-desc">—</div>
@@ -407,7 +440,7 @@
           </div>
           <div class="stat-pill">
             <span class="text-mist/50 text-xs">Wind</span>
-            <span class="text-white text-sm font-medium" id="stat-wind">— km/h</span>
+            <span class="text-white text-sm font-medium" id="stat-wind">—</span>
           </div>
           <div class="stat-pill">
             <span class="text-mist/50 text-xs">Precipitation</span>
@@ -425,10 +458,9 @@
           <div id="week-forecast"></div>
         </div>
       </div>
-    </div>
 
-    <!-- ── BOTTOM ROW: Avatar placeholder + Export ── -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <!-- ── Avatar + Export (share remaining 2 cols) ── -->
+    <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
 
       <!-- HeyGen Avatar panel -->
       <div class="bento-card p-6 reveal" style="transition-delay:0.2s">
@@ -492,7 +524,8 @@
           </button>
         </div>
       </div>
-    </div>
+    </div><!-- /avatar+export nested grid -->
+    </div><!-- /bottom 3-col grid -->
 
   </div>
 </main>
@@ -699,6 +732,8 @@
     const f = payload.raw_forecast;
     const today = f.daily;
     const hourly = f.hourly;
+    const sym = payload.temp_symbol ?? '°';
+    const windUnit = payload.unit === 'fahrenheit' ? 'mph' : 'km/h';
 
     // Main temp (first hourly reading)
     const currentTemp = hourly?.temperature_2m?.[0] ?? today?.temperature_2m_max?.[0] ?? '—';
@@ -706,10 +741,11 @@
     const w = wmo(code);
 
     $('stat-temp').textContent = Math.round(currentTemp);
+    $('stat-temp-unit').textContent = sym;
     $('stat-icon').textContent = w.emoji;
     $('stat-desc').textContent = w.label;
-    $('stat-hilo').textContent = `${Math.round(today.temperature_2m_max?.[0])}° / ${Math.round(today.temperature_2m_min?.[0])}°`;
-    $('stat-wind').textContent = `${today.windspeed_10m_max?.[0] ?? '—'} km/h`;
+    $('stat-hilo').textContent = `${Math.round(today.temperature_2m_max?.[0])}${sym} / ${Math.round(today.temperature_2m_min?.[0])}${sym}`;
+    $('stat-wind').textContent = `${today.windspeed_10m_max?.[0] ?? '—'} ${windUnit}`;
     $('stat-precip').textContent = `${today.precipitation_sum?.[0] ?? 0} mm`;
 
     // Max precipitation probability today
@@ -788,6 +824,133 @@
     });
   }
 
+  // ── Load ElevenLabs voice library ────────────────────────────────
+  async function loadVoices() {
+    const voiceSel = $('voice-select');
+    const modelSel = $('model-select');
+    try {
+      const res  = await fetch('/api/voices');
+      if (!res.ok) throw new Error('Could not fetch voices');
+      const { voices, models } = await res.json();
+
+      // Populate voice dropdown grouped by category
+      voiceSel.innerHTML = '';
+      const groups = {};
+      voices.forEach(v => {
+        const cat = v.category ?? 'premade';
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(v);
+      });
+
+      const catLabels = { cloned: 'My Cloned Voices', professional: 'Professional', generated: 'Generated', premade: 'ElevenLabs Library' };
+      Object.entries(groups).forEach(([cat, list]) => {
+        const grp = document.createElement('optgroup');
+        grp.label = catLabels[cat] ?? cat;
+        list.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.voice_id;
+          const accent = v.labels?.accent ? ` · ${v.labels.accent}` : '';
+          const gender = v.labels?.gender ? ` · ${v.labels.gender}` : '';
+          opt.textContent = `${v.name}${gender}${accent}`;
+          grp.appendChild(opt);
+        });
+        voiceSel.appendChild(grp);
+      });
+
+      // Restore last-used voice
+      const saved = localStorage.getItem('atmosphera_voice_id');
+      if (saved && voiceSel.querySelector(`option[value="${saved}"]`)) {
+        voiceSel.value = saved;
+      }
+
+      // Populate model dropdown from API
+      if (models?.length) {
+        modelSel.innerHTML = '';
+        models.forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m.model_id;
+          opt.textContent = m.name;
+          if (m.model_id === 'eleven_multilingual_v2') opt.selected = true;
+          modelSel.appendChild(opt);
+        });
+      }
+
+    } catch (err) {
+      voiceSel.innerHTML = '<option value="21m00Tcm4TlvDq8ikWAM">Rachel (default)</option>';
+      console.warn('Could not load voices:', err.message);
+    }
+
+    // Save selected voice on change
+    voiceSel.addEventListener('change', () => {
+      localStorage.setItem('atmosphera_voice_id', voiceSel.value);
+    });
+  }
+
+  // ── ElevenLabs audio generation ──────────────────────────────────
+  function setupAudio(payload) {
+    const genBtn   = $('gen-audio-btn');
+    const spinner  = $('audio-spinner');
+    const btnLabel = $('audio-btn-label');
+    const playIco  = $('audio-play-ico');
+    const player   = $('audio-player');
+    const wrap     = $('audio-player-wrap');
+    const errEl    = $('audio-error');
+
+    genBtn.addEventListener('click', async () => {
+      spinner.classList.remove('hidden');
+      playIco.classList.add('hidden');
+      btnLabel.textContent = 'Generating…';
+      genBtn.disabled = true;
+      errEl.classList.add('hidden');
+
+      try {
+        const voiceId  = $('voice-select').value;
+        const modelId  = $('model-select').value;
+
+        const res = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: payload.script.full_text, voice_id: voiceId, model_id: modelId }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error ?? `HTTP ${res.status}`);
+        }
+
+        const { audio_base64, content_type } = await res.json();
+
+        // Convert base64 → blob URL
+        const bytes = Uint8Array.from(atob(audio_base64), c => c.charCodeAt(0));
+        const blob  = new Blob([bytes], { type: content_type });
+        const url   = URL.createObjectURL(blob);
+
+        player.src = url;
+        wrap.classList.remove('hidden');
+        player.play();
+
+        // Sync teleprompter with audio start
+        stopPlayback();
+        tpIndex = 0;
+        renderTeleprompterState();
+        startPlayback();
+
+        btnLabel.textContent = 'Regenerate';
+        localStorage.setItem('atmosphera_voice_id', voiceId);
+
+      } catch (err) {
+        btnLabel.textContent = 'Retry';
+        errEl.textContent = err.message;
+        errEl.classList.remove('hidden');
+        console.error('TTS error:', err);
+      } finally {
+        spinner.classList.add('hidden');
+        playIco.classList.remove('hidden');
+        genBtn.disabled = false;
+      }
+    });
+  }
+
   // ── Check for a video URL stored by n8n callback ─────────────────
   function checkAvatarVideo() {
     const videoUrl = localStorage.getItem('atmosphera_avatar_video');
@@ -834,6 +997,10 @@
 
     // Populate export
     populateExport(payload);
+
+    // Load voice library + set up audio
+    await loadVoices();
+    setupAudio(payload);
 
     // Check for avatar video
     checkAvatarVideo();
