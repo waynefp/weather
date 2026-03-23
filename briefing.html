@@ -363,9 +363,12 @@
               <option value="">Loading your voices…</option>
             </select>
             <select id="model-select" class="webhook-input" style="width:auto;padding:6px 10px;font-size:0.75rem">
-              <option value="eleven_multilingual_v2">Multilingual v2 — Best Quality</option>
-              <option value="eleven_turbo_v2_5">Turbo v2.5 — Fast</option>
-              <option value="eleven_turbo_v2">Turbo v2</option>
+              <option value="speech-02-hd">Speech 02 HD — Best Quality</option>
+              <option value="speech-02-turbo">Speech 02 Turbo — Fast</option>
+              <option value="speech-2.6-hd">Speech 2.6 HD</option>
+              <option value="speech-2.6-turbo">Speech 2.6 Turbo</option>
+              <option value="speech-2.8-hd">Speech 2.8 HD — Latest</option>
+              <option value="speech-2.8-turbo">Speech 2.8 Turbo — Latest Fast</option>
             </select>
           </div>
           <div class="flex flex-col gap-1">
@@ -842,16 +845,14 @@
         groups[cat].push(v);
       });
 
-      const catLabels = { cloned: 'My Cloned Voices', professional: 'Professional', generated: 'Generated', premade: 'ElevenLabs Library' };
+      const catLabels = { cloned: 'My Cloned Voices', generated: 'My Generated Voices', system: 'Minimax Voice Library' };
       Object.entries(groups).forEach(([cat, list]) => {
         const grp = document.createElement('optgroup');
         grp.label = catLabels[cat] ?? cat;
         list.forEach(v => {
           const opt = document.createElement('option');
           opt.value = v.voice_id;
-          const accent = v.labels?.accent ? ` · ${v.labels.accent}` : '';
-          const gender = v.labels?.gender ? ` · ${v.labels.gender}` : '';
-          opt.textContent = `${v.name}${gender}${accent}`;
+          opt.textContent = v.name;
           grp.appendChild(opt);
         });
         voiceSel.appendChild(grp);
@@ -876,7 +877,7 @@
       }
 
     } catch (err) {
-      voiceSel.innerHTML = '<option value="21m00Tcm4TlvDq8ikWAM">Rachel (default)</option>';
+      voiceSel.innerHTML = '<option value="English_expressive_narrator">English Expressive Narrator (default)</option>';
       console.warn('Could not load voices:', err.message);
     }
 
