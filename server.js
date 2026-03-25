@@ -48,6 +48,30 @@ const server = http.createServer(async (req, res) => {
     end() { res.writeHead(this._status, this._headers); res.end(); },
   });
 
+  // ── Map tile proxy (binary response — handled directly) ──────
+  if (req.url.startsWith('/api/map-tiles') && req.method === 'GET') {
+    const params = new URLSearchParams(req.url.split('?')[1] ?? '');
+    const layer  = params.get('layer');
+    const z      = params.get('z');
+    const x      = params.get('x');
+    const y      = params.get('y');
+    const key    = process.env.OPENWEATHERMAP_API_KEY;
+    const validLayers = new Set(['temp_new','precipitation_new','wind_new','clouds_new','pressure_new']);
+
+    if (!key || !validLayers.has(layer) || z == null || x == null || y == null) {
+      res.writeHead(400); res.end(); return;
+    }
+    const upstream = `https://tile.openweathermap.org/map/${layer}/${z}/${x}/${y}.png?appid=${key}`;
+    const tileRes  = await fetch(upstream);
+    const buffer   = Buffer.from(await tileRes.arrayBuffer());
+    res.writeHead(tileRes.ok ? 200 : tileRes.status, {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=300',
+    });
+    res.end(buffer);
+    return;
+  }
+
   if (postRoutes[req.url] && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => body += chunk);
