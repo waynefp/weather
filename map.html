@@ -245,6 +245,7 @@
     <button class="layer-btn active" data-layer="temp">Temperature</button>
     <button class="layer-btn" data-layer="precip">Precipitation</button>
     <button class="layer-btn" data-layer="wind">Wind</button>
+    <button class="layer-btn" data-layer="pressure">Pressure</button>
   </div>
 
   <!-- ═══ MAP ═══ -->
@@ -300,9 +301,10 @@
 
     // OWM weather overlay layers — routed through /api/map-tiles proxy (key never in browser)
     const owmLayers = {
-      temp:   L.tileLayer('/api/map-tiles?layer=temp_new&z={z}&x={x}&y={y}',          { opacity: 0.72, maxZoom: 19 }),
-      precip: L.tileLayer('/api/map-tiles?layer=precipitation_new&z={z}&x={x}&y={y}', { opacity: 0.80, maxZoom: 19 }),
-      wind:   L.tileLayer('/api/map-tiles?layer=wind_new&z={z}&x={x}&y={y}',          { opacity: 0.72, maxZoom: 19 }),
+      temp:     L.tileLayer('/api/map-tiles?layer=temp_new&z={z}&x={x}&y={y}',          { opacity: 0.72, maxZoom: 19 }),
+      precip:   L.tileLayer('/api/map-tiles?layer=precipitation_new&z={z}&x={x}&y={y}', { opacity: 0.80, maxZoom: 19 }),
+      wind:     L.tileLayer('/api/map-tiles?layer=wind_new&z={z}&x={x}&y={y}',          { opacity: 0.72, maxZoom: 19 }),
+      pressure: L.tileLayer('/api/map-tiles?layer=pressure_new&z={z}&x={x}&y={y}',      { opacity: 0.68, maxZoom: 19 }),
     };
 
     let activeLayer = 'temp';

@@ -1,5 +1,4 @@
-# Local assets too large for standard git
-*.mp4
+# Large video assets (commit site videos individually if under 50MB)
 *.mov
 *.avi
 *.mkv
@@ -14,3 +13,5 @@
 
 # Vercel
 .vercel/
+
+.vercel
