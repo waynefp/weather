@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fog & Advection Mist — Atmosphera</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Outfit','sans-serif'], serif: ['DM Serif Display','serif'] },
+          colors: { ink: '#0d0f14', 'ink-2': '#13161d', 'ink-3': '#1a1e28', mist: '#8b9ab3', frost: '#c8d8f0', sky: '#4a90d9', aurora: '#7fdbca', storm: '#4b5f7c' }
+        }
+      }
+    };
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background-color: #0d0f14; color: #e8edf5; font-family: 'Outfit', sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+    body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999; opacity: 0.025; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); }
+    .nav-glass { background: rgba(13,15,20,0.75); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid rgba(200,216,240,0.06); }
+    .bento-card { background: rgba(26,30,40,0.6); border: 1px solid rgba(200,216,240,0.07); border-radius: 2rem; backdrop-filter: blur(12px); position: relative; overflow: hidden; }
+    .bento-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg, rgba(200,216,240,0.04) 0%, transparent 60%); pointer-events: none; }
+    .section-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #4a90d9; }
+    .tag { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; border: 1px solid rgba(200,216,240,0.12); background: rgba(200,216,240,0.04); color: #8b9ab3; }
+    .grad-blue { background: linear-gradient(135deg, #e8edf5 0%, #4a90d9 60%, #7fdbca 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s cubic-bezier(0.22,1,0.36,1), transform 0.8s cubic-bezier(0.22,1,0.36,1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .pulse-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(74,144,217,0.5); animation: pulseRing 2s ease-out infinite; }
+    @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } }
+    .bento-main { display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: minmax(80px, auto); gap: 1rem; }
+    .span-7 { grid-column: span 7; } .span-5 { grid-column: span 5; } .span-12 { grid-column: span 12; } .span-6 { grid-column: span 6; } .span-4 { grid-column: span 4; } .span-8 { grid-column: span 8; }
+    @media (max-width: 1024px) { .span-7, .span-5, .span-8 { grid-column: span 12; } .span-6 { grid-column: span 12; } }
+
+    /* Hero */
+    .hero-bg { background: radial-gradient(ellipse 100% 80% at 50% 100%, rgba(20,25,35,1) 0%, rgba(10,13,20,1) 100%); }
+    @keyframes fogDrift { from{transform:translateX(-8%)} to{transform:translateX(8%)} }
+    @keyframes fogDrift2 { from{transform:translateX(5%)} to{transform:translateX(-5%)} }
+    @keyframes fogDrift3 { from{transform:translateX(-4%) translateY(0)} to{transform:translateX(4%) translateY(-6px)} }
+    @keyframes fogFade { 0%,100%{opacity:0.35} 50%{opacity:0.6} }
+    .fog-layer-1 { animation: fogDrift 18s ease-in-out infinite alternate, fogFade 18s ease-in-out infinite; }
+    .fog-layer-2 { animation: fogDrift2 24s ease-in-out infinite alternate, fogFade 12s ease-in-out 2s infinite; }
+    .fog-layer-3 { animation: fogDrift3 14s ease-in-out infinite alternate, fogFade 20s ease-in-out 4s infinite; }
+    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #0d0f14; } ::-webkit-scrollbar-thumb { background: #8b9ab3; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav-glass fixed top-0 left-0 right-0 z-50">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <a href="../index.html" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+      <div class="relative w-8 h-8">
+        <div class="pulse-ring"></div>
+        <svg viewBox="0 0 32 32" fill="none" class="w-8 h-8 relative z-10">
+          <circle cx="16" cy="16" r="6" fill="#4a90d9"/>
+          <path d="M16 4v4M16 24v4M4 16h4M24 16h4" stroke="#4a90d9" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+          <path d="M7.5 7.5l2.8 2.8M21.7 21.7l2.8 2.8M7.5 24.5l2.8-2.8M21.7 10.3l2.8-2.8" stroke="#7fdbca" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+        </svg>
+      </div>
+      <span class="font-serif text-xl tracking-tight text-white">Atmosphera</span>
+    </a>
+    <span class="hidden md:block font-serif text-base italic text-mist/50">Fog & Advection Mist</span>
+    <a href="../index.html#phenomena" class="text-sm text-mist hover:text-white transition-colors duration-200 flex items-center gap-1.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+      All Phenomena
+    </a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero-bg relative min-h-[80vh] flex items-center justify-center overflow-hidden pt-16">
+  <!-- Fog layers -->
+  <div class="absolute inset-0 overflow-hidden">
+    <div class="fog-layer-1" style="position:absolute; bottom:0; left:-20%; width:140%; height:55%; background:linear-gradient(180deg, transparent 0%, rgba(140,155,175,0.18) 40%, rgba(160,175,195,0.28) 100%); filter:blur(30px); border-radius:60% 60% 0 0;"></div>
+    <div class="fog-layer-2" style="position:absolute; bottom:10%; left:-15%; width:130%; height:40%; background:linear-gradient(180deg, transparent 0%, rgba(120,135,155,0.15) 50%, rgba(150,165,185,0.22) 100%); filter:blur(40px); border-radius:50% 50% 0 0;"></div>
+    <div class="fog-layer-3" style="position:absolute; bottom:20%; left:-10%; width:120%; height:30%; background:linear-gradient(180deg, transparent 0%, rgba(100,115,135,0.12) 60%, rgba(130,145,165,0.18) 100%); filter:blur(50px); border-radius:40% 40% 0 0;"></div>
+    <!-- Ground haze -->
+    <div style="position:absolute; bottom:0; left:0; right:0; height:180px; background:linear-gradient(180deg, transparent 0%, rgba(160,175,195,0.08) 100%); filter:blur(20px);"></div>
+  </div>
+
+  <div class="relative z-10 text-center max-w-3xl mx-auto px-6">
+    <div class="reveal mb-4"><span class="tag">Low Visibility</span></div>
+    <h1 class="reveal font-serif text-5xl md:text-7xl leading-tight mb-6" style="transition-delay:0.1s">
+      <span class="grad-blue">Fog & Advection</span><br/>Mist
+    </h1>
+    <p class="reveal text-mist text-lg md:text-xl max-w-xl mx-auto leading-relaxed" style="transition-delay:0.2s">
+      A cloud grounded by the Earth — forming when air cools below its dew point at the surface, reducing visibility to near zero and erasing the boundary between sky and land.
+    </p>
+  </div>
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-ink to-transparent"></div>
+</section>
+
+<!-- Quick Stats Strip -->
+<section class="max-w-7xl mx-auto px-6 py-10">
+  <div class="reveal bento-card p-6 md:p-8">
+    <p class="section-label mb-6">Key Statistics</p>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">&lt;1 km</div>
+        <div class="text-mist text-sm">Visibility threshold that officially defines fog</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">~100%</div>
+        <div class="text-mist text-sm">Relative humidity required — air at or above dew point</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">5 types</div>
+        <div class="text-mist text-sm">Radiation, advection, valley, upslope, freezing</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">40%</div>
+        <div class="text-mist text-sm">Of moisture for California coastal redwoods from fog drip</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Bento Grid -->
+<section class="max-w-7xl mx-auto px-6 pb-10">
+  <div class="bento-main">
+
+    <!-- Formation (span-7) -->
+    <div class="span-7 reveal bento-card p-8">
+      <p class="section-label mb-4">Formation Science</p>
+      <h2 class="font-serif text-3xl text-frost mb-5">When Air Touches Its Dew Point</h2>
+      <div class="space-y-4 text-mist leading-relaxed">
+        <p>Fog is simply a cloud with its base at or near the Earth's surface — the same physics, just at ground level. It forms whenever air is cooled below its <strong class="text-frost">dew point temperature</strong>, the temperature at which the air can no longer hold all its water vapour as gas. The excess condenses into billions of tiny liquid droplets, each 1–100 micrometres in diameter, suspended in still or slowly moving air.</p>
+        <p><strong class="text-frost">Radiation fog</strong> is the most common type. On clear, calm nights, the ground loses heat rapidly to space through longwave radiation. The lowest layers of air cool conductively. If surface temperature drops to the dew point, fog forms — often starting just before dawn when cooling reaches its maximum. It burns off as the sun heats the surface the following morning.</p>
+        <p><strong class="text-frost">Advection fog</strong> forms when warm, moist air moves horizontally over a cold surface — the classic San Francisco Bay fog that rolls in from the Pacific over the cold California Current. It can persist day and night, driven by onshore winds rather than radiative cooling.</p>
+        <p><strong class="text-frost">Valley fog</strong> forms when cold, dense air drains off surrounding hillsides and pools in low-lying terrain on clear nights. California's Tule Fog — the densest and most dangerous fog in the US — occurs in the Central Valley's "bowl" geometry, sometimes persisting for days during winter inversions with near-zero visibility over hundreds of kilometres.</p>
+      </div>
+    </div>
+
+    <!-- Types card (span-5) -->
+    <div class="span-5 reveal bento-card p-8" style="transition-delay:0.15s">
+      <p class="section-label mb-4">Classification</p>
+      <h2 class="font-serif text-2xl text-frost mb-5">Fog, Mist & Haze</h2>
+      <div class="space-y-3">
+        <div class="p-3 rounded-xl" style="background:rgba(200,216,240,0.05); border:1px solid rgba(200,216,240,0.08)">
+          <h3 class="font-semibold text-frost text-sm mb-1">Radiation Fog</h3>
+          <p class="text-mist text-sm">Nocturnal cooling of land surface. Disperses rapidly after sunrise. Common in temperate regions on clear, calm nights.</p>
+        </div>
+        <div class="p-3 rounded-xl" style="background:rgba(74,144,217,0.06); border:1px solid rgba(74,144,217,0.1)">
+          <h3 class="font-semibold text-frost text-sm mb-1">Advection Fog</h3>
+          <p class="text-mist text-sm">Warm air over cold sea surface. Can persist 24/7. Responsible for San Francisco's iconic fogscape and Grand Banks maritime fog (thickest on Earth).</p>
+        </div>
+        <div class="p-3 rounded-xl" style="background:rgba(127,219,202,0.06); border:1px solid rgba(127,219,202,0.1)">
+          <h3 class="font-semibold text-frost text-sm mb-1">Freezing Fog & Ice Fog</h3>
+          <p class="text-mist text-sm">Supercooled droplets coat surfaces in rime ice. Ice fog (below –30°C) is composed of ice crystals — common in Arctic and Siberian cities.</p>
+        </div>
+        <div class="p-3 rounded-xl" style="background:rgba(200,216,240,0.03); border:1px solid rgba(200,216,240,0.06)">
+          <h3 class="font-semibold text-frost text-sm mb-1">Fog vs Mist vs Haze</h3>
+          <p class="text-mist text-sm">Fog: visibility &lt;1 km (liquid droplets). Mist: 1–2 km visibility (droplets). Haze: visibility reduced by dry particles (dust, smoke, pollution) — no water droplets required.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Impact (span-12) -->
+    <div class="span-12 reveal bento-card p-8" style="transition-delay:0.2s">
+      <p class="section-label mb-4">Impact</p>
+      <h2 class="font-serif text-3xl text-frost mb-6">Aviation, Shipping, Roads & the Forest</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div>
+          <h3 class="font-semibold text-sky mb-2">Aviation & Shipping</h3>
+          <p class="text-mist text-sm leading-relaxed">Fog is responsible for more aviation delays and diversions than any other weather phenomenon. Category III instrument landing systems allow aircraft to land in near-zero visibility. At sea, the Grand Banks fog between Newfoundland and the Gulf Stream has claimed hundreds of ships — a key driver behind mandatory foghorns and later radar.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-sky mb-2">Road Accidents</h3>
+          <p class="text-mist text-sm leading-relaxed">Fog contributes to thousands of road fatalities annually. California's Tule Fog has triggered pile-ups involving 100+ vehicles on Highway 99. The UK's M25 and Germany's Autobahn experience regular fog-related multi-vehicle accidents. Variable message signs and automatic braking systems have reduced — but not eliminated — the risk.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-aurora mb-2">Agriculture & Ecosystems</h3>
+          <p class="text-mist text-sm leading-relaxed">Fog drip — where droplets collect on leaf surfaces and drip to the ground — delivers up to 40% of the annual moisture budget for California coastal redwoods and Canary Island laurel forests. Conversely, persistent advection fog can suppress solar radiation and stunt crop growth. The Atacama coastal fog ("camanchaca") supports unique desert ecosystems in one of the driest places on Earth.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Footer Strip -->
+<footer class="max-w-7xl mx-auto px-6 py-12 mt-4">
+  <div class="bento-card p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+    <a href="../index.html#phenomena" class="text-mist hover:text-white transition-colors text-sm flex items-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+      All Phenomena
+    </a>
+    <span class="text-mist/40 text-xs font-serif italic">Explore related phenomena</span>
+    <div class="flex gap-4">
+      <a href="blizzard.html" class="text-sm text-sky hover:text-white transition-colors">Blizzard &rarr;</a>
+      <a href="polar-vortex.html" class="text-sm text-sky hover:text-white transition-colors">Polar Vortex &rarr;</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } }), { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

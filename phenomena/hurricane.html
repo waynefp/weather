@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hurricane & Cyclones — Atmosphera</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Outfit','sans-serif'], serif: ['DM Serif Display','serif'] },
+          colors: { ink: '#0d0f14', 'ink-2': '#13161d', 'ink-3': '#1a1e28', mist: '#8b9ab3', frost: '#c8d8f0', sky: '#4a90d9', aurora: '#7fdbca', storm: '#4b5f7c' }
+        }
+      }
+    };
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background-color: #0d0f14; color: #e8edf5; font-family: 'Outfit', sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+    body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999; opacity: 0.025; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); }
+    .nav-glass { background: rgba(13,15,20,0.75); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid rgba(200,216,240,0.06); }
+    .bento-card { background: rgba(26,30,40,0.6); border: 1px solid rgba(200,216,240,0.07); border-radius: 2rem; backdrop-filter: blur(12px); position: relative; overflow: hidden; }
+    .bento-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg, rgba(200,216,240,0.04) 0%, transparent 60%); pointer-events: none; }
+    .section-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #4a90d9; }
+    .tag { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; border: 1px solid rgba(200,216,240,0.12); background: rgba(200,216,240,0.04); color: #8b9ab3; }
+    .grad-blue { background: linear-gradient(135deg, #e8edf5 0%, #4a90d9 60%, #7fdbca 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s cubic-bezier(0.22,1,0.36,1), transform 0.8s cubic-bezier(0.22,1,0.36,1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .pulse-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(74,144,217,0.5); animation: pulseRing 2s ease-out infinite; }
+    @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } }
+    .bento-main { display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: minmax(80px, auto); gap: 1rem; }
+    .span-7 { grid-column: span 7; } .span-5 { grid-column: span 5; } .span-12 { grid-column: span 12; } .span-6 { grid-column: span 6; } .span-4 { grid-column: span 4; } .span-8 { grid-column: span 8; }
+    @media (max-width: 1024px) { .span-7, .span-5, .span-8 { grid-column: span 12; } .span-6 { grid-column: span 12; } }
+
+    /* Hero */
+    .hero-bg { background: radial-gradient(ellipse 80% 70% at 50% 50%, rgba(10,25,50,1) 0%, #060e1a 100%); }
+    @keyframes spiralSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    @keyframes spiralSpin2 { from{transform:rotate(0deg)} to{transform:rotate(-360deg)} }
+    .spiral { animation: spiralSpin 30s linear infinite; transform-origin: center; }
+    .spiral-2 { animation: spiralSpin2 45s linear infinite; transform-origin: center; }
+    .spiral-3 { animation: spiralSpin 20s linear infinite; transform-origin: center; }
+    @keyframes eyePulse { 0%,100%{r:28} 50%{r:32} }
+    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #0d0f14; } ::-webkit-scrollbar-thumb { background: #4a90d9; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav-glass fixed top-0 left-0 right-0 z-50">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <a href="../index.html" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+      <div class="relative w-8 h-8">
+        <div class="pulse-ring"></div>
+        <svg viewBox="0 0 32 32" fill="none" class="w-8 h-8 relative z-10">
+          <circle cx="16" cy="16" r="6" fill="#4a90d9"/>
+          <path d="M16 4v4M16 24v4M4 16h4M24 16h4" stroke="#4a90d9" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+          <path d="M7.5 7.5l2.8 2.8M21.7 21.7l2.8 2.8M7.5 24.5l2.8-2.8M21.7 10.3l2.8-2.8" stroke="#7fdbca" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+        </svg>
+      </div>
+      <span class="font-serif text-xl tracking-tight text-white">Atmosphera</span>
+    </a>
+    <span class="hidden md:block font-serif text-base italic text-mist/50">Hurricane & Cyclones</span>
+    <a href="../index.html#phenomena" class="text-sm text-mist hover:text-white transition-colors duration-200 flex items-center gap-1.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+      All Phenomena
+    </a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero-bg relative min-h-[80vh] flex items-center justify-center overflow-hidden pt-16">
+  <svg class="absolute inset-0 w-full h-full" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <radialGradient id="oceanGrad" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="rgba(20,50,90,0.3)"/>
+        <stop offset="100%" stop-color="rgba(5,15,35,0.8)"/>
+      </radialGradient>
+      <filter id="spiralBlur"><feGaussianBlur stdDeviation="4"/></filter>
+      <filter id="eyeBlur"><feGaussianBlur stdDeviation="8"/></filter>
+    </defs>
+    <rect width="1200" height="800" fill="url(#oceanGrad)"/>
+    <!-- Outer spiral bands -->
+    <g class="spiral">
+      <path d="M600,400 m-280,0 a280,280 0 1,1 1,0" fill="none" stroke="rgba(74,144,217,0.15)" stroke-width="60" filter="url(#spiralBlur)"/>
+      <path d="M600,400 m-210,0 a210,210 0 1,1 560,0" fill="none" stroke="rgba(127,219,202,0.12)" stroke-width="40" filter="url(#spiralBlur)"/>
+    </g>
+    <g class="spiral-2">
+      <path d="M600,400 m-240,0 a240,240 0 0,0 480,0" fill="none" stroke="rgba(74,144,217,0.10)" stroke-width="50" filter="url(#spiralBlur)"/>
+    </g>
+    <!-- Inner eyewall -->
+    <g class="spiral-3">
+      <circle cx="600" cy="400" r="120" fill="none" stroke="rgba(100,160,220,0.25)" stroke-width="30" filter="url(#spiralBlur)"/>
+      <circle cx="600" cy="400" r="80" fill="none" stroke="rgba(127,219,202,0.2)" stroke-width="20" filter="url(#spiralBlur)"/>
+    </g>
+    <!-- Calm eye -->
+    <circle cx="600" cy="400" r="30" fill="rgba(5,15,35,0.7)" filter="url(#eyeBlur)"/>
+    <circle cx="600" cy="400" r="18" fill="rgba(10,25,50,0.9)"/>
+  </svg>
+
+  <div class="relative z-10 text-center max-w-3xl mx-auto px-6">
+    <div class="reveal mb-4"><span class="tag">Tropical</span></div>
+    <h1 class="reveal font-serif text-5xl md:text-7xl leading-tight mb-6" style="transition-delay:0.1s">
+      <span class="grad-blue">Hurricane &</span><br/>Cyclones
+    </h1>
+    <p class="reveal text-mist text-lg md:text-xl max-w-xl mx-auto leading-relaxed" style="transition-delay:0.2s">
+      The most powerful weather systems on Earth — vast heat engines that draw energy from warm tropical oceans and release it as hundreds of kilometres of rotating, catastrophic wind and rain.
+    </p>
+  </div>
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-ink to-transparent"></div>
+</section>
+
+<!-- Quick Stats Strip -->
+<section class="max-w-7xl mx-auto px-6 py-10">
+  <div class="reveal bento-card p-6 md:p-8">
+    <p class="section-label mb-6">Key Statistics</p>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">252+ km/h</div>
+        <div class="text-mist text-sm">Category 5 sustained wind speed threshold</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">30–65 km</div>
+        <div class="text-mist text-sm">Diameter of the calm, cloud-free eye at storm centre</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">10–15 m</div>
+        <div class="text-mist text-sm">Storm surge height in major landfalling hurricanes</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">26°C</div>
+        <div class="text-mist text-sm">Minimum ocean surface temperature to sustain a hurricane</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Bento Grid -->
+<section class="max-w-7xl mx-auto px-6 pb-10">
+  <div class="bento-main">
+
+    <!-- Formation (span-7) -->
+    <div class="span-7 reveal bento-card p-8">
+      <p class="section-label mb-4">Formation Science</p>
+      <h2 class="font-serif text-3xl text-frost mb-5">The Tropical Heat Engine</h2>
+      <div class="space-y-4 text-mist leading-relaxed">
+        <p>Hurricanes (called typhoons in the western Pacific and cyclones in the Indian Ocean) are powered entirely by the latent heat stored in warm tropical ocean water. When sea surface temperatures exceed 26°C to a depth of at least 50 metres, intense evaporation loads the atmosphere with moisture.</p>
+        <p>As this warm, humid air rises, it cools, releasing enormous amounts of latent heat through condensation into towering thunderstorm clusters called a <strong class="text-frost">tropical disturbance</strong>. The Earth's Coriolis effect imparts rotation — counterclockwise in the Northern Hemisphere, clockwise in the Southern — spinning the convective cluster into an organised <strong class="text-frost">tropical depression</strong>.</p>
+        <p>As winds strengthen and deep convection organises around a central core, the system passes through tropical storm intensity. The <strong class="text-frost">eye</strong> forms when strong upper-level outflow creates a descending column of clear, warm, calm air at the centre. The surrounding <strong class="text-frost">eyewall</strong> — a ring of intense thunderstorm convection — contains the storm's most violent winds and heaviest rainfall.</p>
+        <p><strong class="text-frost">Rapid intensification</strong> — a wind speed increase of 56 km/h or more in 24 hours — occurs when all conditions align: warm deep water, low wind shear, and high humidity. Hurricane Patricia (2015) deepened from Category 1 to Category 5 in just 24 hours, reaching 345 km/h winds.</p>
+      </div>
+    </div>
+
+    <!-- Saffir-Simpson / Naming (span-5) -->
+    <div class="span-5 reveal bento-card p-8" style="transition-delay:0.15s">
+      <p class="section-label mb-4">Scale & Systems</p>
+      <h2 class="font-serif text-2xl text-frost mb-5">Saffir-Simpson & Naming</h2>
+      <div class="space-y-3">
+        <div class="grid grid-cols-5 gap-1 mb-2">
+          <div class="text-center p-2 rounded-lg" style="background:rgba(127,219,202,0.1)"><div class="text-aurora font-bold text-sm">C1</div><div class="text-mist text-xs">119</div></div>
+          <div class="text-center p-2 rounded-lg" style="background:rgba(100,170,100,0.1)"><div class="text-green-400 font-bold text-sm">C2</div><div class="text-mist text-xs">154</div></div>
+          <div class="text-center p-2 rounded-lg" style="background:rgba(220,180,50,0.1)"><div class="text-yellow-400 font-bold text-sm">C3</div><div class="text-mist text-xs">178</div></div>
+          <div class="text-center p-2 rounded-lg" style="background:rgba(220,100,50,0.1)"><div class="text-orange-400 font-bold text-sm">C4</div><div class="text-mist text-xs">209</div></div>
+          <div class="text-center p-2 rounded-lg" style="background:rgba(200,60,60,0.1)"><div class="text-red-400 font-bold text-sm">C5</div><div class="text-mist text-xs">252+</div></div>
+        </div>
+        <p class="text-mist text-xs mb-3">Speeds in km/h. Note: storm surge, not wind speed, causes the majority of hurricane fatalities.</p>
+        <div class="p-4 rounded-xl" style="background:rgba(74,144,217,0.06); border:1px solid rgba(74,144,217,0.1)">
+          <h3 class="font-semibold text-frost mb-1 text-sm">The Naming System</h3>
+          <p class="text-mist text-sm">The World Meteorological Organisation maintains rotating lists of names for 6 basins. Atlantic names alternate male/female alphabetically. Retired names (Katrina, Maria, Harvey) were too deadly or costly to reuse.</p>
+        </div>
+        <div class="p-4 rounded-xl" style="background:rgba(200,216,240,0.04); border:1px solid rgba(200,216,240,0.08)">
+          <h3 class="font-semibold text-frost mb-1 text-sm">Rapid Intensification</h3>
+          <p class="text-mist text-sm">Increasingly common as ocean heat content rises. The window between a "manageable" storm forecast and a catastrophic one can be less than 24 hours — a critical challenge for evacuation planners.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notable Storms (span-12) -->
+    <div class="span-12 reveal bento-card p-8" style="transition-delay:0.2s">
+      <p class="section-label mb-4">Notable Events</p>
+      <h2 class="font-serif text-3xl text-frost mb-6">Storms That Changed Policy and History</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div>
+          <h3 class="font-semibold text-sky mb-2">Hurricane Katrina — 2005</h3>
+          <p class="text-mist text-sm leading-relaxed">Category 3 at landfall near New Orleans, but with a catastrophic storm surge of up to 8.5 m. Levee failures flooded 80% of the city. 1,833 fatalities, $125 billion in damages. Exposed systemic failures in emergency preparedness and infrastructure maintenance.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-sky mb-2">Hurricane Harvey — 2017</h3>
+          <p class="text-mist text-sm leading-relaxed">Stalled over Houston for four days, dropping a record 1,538 mm of rain — the most from any US tropical cyclone. Catastrophic flooding across Harris County. 68 direct fatalities, $125 billion in damages. Highlighted the flooding risk of slow-moving storms.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-aurora mb-2">Hurricane Maria — 2017</h3>
+          <p class="text-mist text-sm leading-relaxed">Category 4 devastated Puerto Rico, destroying the island's entire power grid. An estimated 2,975 excess deaths in the months following, mostly from healthcare system collapse. Recovery took years, exposing vulnerabilities of island infrastructure to Cat 4+ direct strikes.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Footer Strip -->
+<footer class="max-w-7xl mx-auto px-6 py-12 mt-4">
+  <div class="bento-card p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+    <a href="../index.html#phenomena" class="text-mist hover:text-white transition-colors text-sm flex items-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+      All Phenomena
+    </a>
+    <span class="text-mist/40 text-xs font-serif italic">Explore related phenomena</span>
+    <div class="flex gap-4">
+      <a href="tornado.html" class="text-sm text-sky hover:text-white transition-colors">Tornado &rarr;</a>
+      <a href="lightning.html" class="text-sm text-sky hover:text-white transition-colors">Lightning &rarr;</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } }), { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

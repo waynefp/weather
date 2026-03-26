@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aurora Borealis — Atmosphera</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Outfit','sans-serif'], serif: ['DM Serif Display','serif'] },
+          colors: { ink: '#0d0f14', 'ink-2': '#13161d', 'ink-3': '#1a1e28', mist: '#8b9ab3', frost: '#c8d8f0', sky: '#4a90d9', aurora: '#7fdbca', storm: '#4b5f7c' }
+        }
+      }
+    };
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background-color: #0d0f14; color: #e8edf5; font-family: 'Outfit', sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+    body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999; opacity: 0.025; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); }
+    .nav-glass { background: rgba(13,15,20,0.75); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid rgba(200,216,240,0.06); }
+    .bento-card { background: rgba(26,30,40,0.6); border: 1px solid rgba(200,216,240,0.07); border-radius: 2rem; backdrop-filter: blur(12px); position: relative; overflow: hidden; }
+    .bento-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg, rgba(200,216,240,0.04) 0%, transparent 60%); pointer-events: none; }
+    .section-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #4a90d9; }
+    .tag { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; border: 1px solid rgba(200,216,240,0.12); background: rgba(200,216,240,0.04); color: #8b9ab3; }
+    .grad-blue { background: linear-gradient(135deg, #e8edf5 0%, #4a90d9 60%, #7fdbca 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .grad-aurora { background: linear-gradient(135deg, #7fdbca 0%, #4a90d9 50%, #c8d8f0 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s cubic-bezier(0.22,1,0.36,1), transform 0.8s cubic-bezier(0.22,1,0.36,1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .pulse-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(74,144,217,0.5); animation: pulseRing 2s ease-out infinite; }
+    @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } }
+    .bento-main { display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: minmax(80px, auto); gap: 1rem; }
+    .span-7 { grid-column: span 7; } .span-5 { grid-column: span 5; } .span-12 { grid-column: span 12; } .span-6 { grid-column: span 6; } .span-4 { grid-column: span 4; } .span-8 { grid-column: span 8; }
+    @media (max-width: 1024px) { .span-7, .span-5, .span-8 { grid-column: span 12; } .span-6 { grid-column: span 12; } }
+
+    /* Hero */
+    .hero-bg { background: radial-gradient(ellipse 80% 60% at 50% 60%, rgba(5,15,30,1) 0%, #050810 100%); }
+    @keyframes auroraWave1 { 0%,100%{transform:translateX(0) scaleY(1) skewX(0deg)} 50%{transform:translateX(-5%) scaleY(1.2) skewX(2deg)} }
+    @keyframes auroraWave2 { 0%,100%{transform:translateX(0) scaleY(1) skewX(0deg)} 50%{transform:translateX(6%) scaleY(0.85) skewX(-3deg)} }
+    @keyframes auroraWave3 { 0%,100%{transform:translateX(0) scaleY(1)} 50%{transform:translateX(-3%) scaleY(1.3)} }
+    @keyframes auroraFade { 0%,100%{opacity:0.5} 50%{opacity:0.85} }
+    .aurora-band-1 { animation: auroraWave1 9s ease-in-out infinite, auroraFade 9s ease-in-out infinite; }
+    .aurora-band-2 { animation: auroraWave2 13s ease-in-out 1s infinite, auroraFade 13s ease-in-out 1s infinite; }
+    .aurora-band-3 { animation: auroraWave3 7s ease-in-out 2s infinite, auroraFade 7s ease-in-out 2s infinite; }
+    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #0d0f14; } ::-webkit-scrollbar-thumb { background: #7fdbca; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav-glass fixed top-0 left-0 right-0 z-50">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <a href="../index.html" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+      <div class="relative w-8 h-8">
+        <div class="pulse-ring"></div>
+        <svg viewBox="0 0 32 32" fill="none" class="w-8 h-8 relative z-10">
+          <circle cx="16" cy="16" r="6" fill="#4a90d9"/>
+          <path d="M16 4v4M16 24v4M4 16h4M24 16h4" stroke="#4a90d9" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+          <path d="M7.5 7.5l2.8 2.8M21.7 21.7l2.8 2.8M7.5 24.5l2.8-2.8M21.7 10.3l2.8-2.8" stroke="#7fdbca" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+        </svg>
+      </div>
+      <span class="font-serif text-xl tracking-tight text-white">Atmosphera</span>
+    </a>
+    <span class="hidden md:block font-serif text-base italic text-mist/50">Aurora Borealis</span>
+    <a href="../index.html#phenomena" class="text-sm text-mist hover:text-white transition-colors duration-200 flex items-center gap-1.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+      All Phenomena
+    </a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero-bg relative min-h-[80vh] flex items-center justify-center overflow-hidden pt-16">
+  <!-- Aurora bands -->
+  <div class="absolute inset-0 overflow-hidden">
+    <div class="aurora-band-1" style="position:absolute; top:15%; left:-20%; width:140%; height:180px; background:radial-gradient(ellipse 80% 50% at 50% 50%, rgba(127,219,202,0.38) 0%, transparent 70%); filter:blur(40px); border-radius:50%;"></div>
+    <div class="aurora-band-2" style="position:absolute; top:30%; left:-10%; width:120%; height:140px; background:radial-gradient(ellipse 70% 50% at 50% 50%, rgba(74,144,217,0.30) 0%, transparent 70%); filter:blur(50px); border-radius:50%;"></div>
+    <div class="aurora-band-3" style="position:absolute; top:45%; left:-15%; width:130%; height:120px; background:radial-gradient(ellipse 60% 50% at 50% 50%, rgba(100,200,180,0.22) 0%, transparent 70%); filter:blur(35px); border-radius:50%;"></div>
+    <!-- Stars -->
+    <div style="position:absolute;inset:0;background-image:radial-gradient(1px 1px at 10% 8%, rgba(255,255,255,0.6) 0%, transparent 0%), radial-gradient(1px 1px at 25% 15%, rgba(255,255,255,0.4) 0%, transparent 0%), radial-gradient(1px 1px at 45% 5%, rgba(255,255,255,0.7) 0%, transparent 0%), radial-gradient(1px 1px at 65% 12%, rgba(255,255,255,0.5) 0%, transparent 0%), radial-gradient(1px 1px at 80% 7%, rgba(255,255,255,0.6) 0%, transparent 0%), radial-gradient(1px 1px at 92% 18%, rgba(255,255,255,0.4) 0%, transparent 0%);"></div>
+  </div>
+
+  <div class="relative z-10 text-center max-w-3xl mx-auto px-6">
+    <div class="reveal mb-4">
+      <span class="tag">Geomagnetic</span>
+    </div>
+    <h1 class="reveal font-serif text-5xl md:text-7xl leading-tight mb-6" style="transition-delay:0.1s">
+      <span class="grad-aurora">Aurora Borealis</span>
+    </h1>
+    <p class="reveal text-mist text-lg md:text-xl max-w-xl mx-auto leading-relaxed" style="transition-delay:0.2s">
+      Solar wind particles, guided by Earth's magnetic field, collide with oxygen and nitrogen atoms 100 km above the surface — painting the polar sky in impossible greens, reds, and violets.
+    </p>
+  </div>
+
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-ink to-transparent"></div>
+</section>
+
+<!-- Quick Stats Strip -->
+<section class="max-w-7xl mx-auto px-6 py-10">
+  <div class="reveal bento-card p-6 md:p-8">
+    <p class="section-label mb-6">Key Statistics</p>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">60–200 km</div>
+        <div class="text-mist text-sm">Altitude of aurora display in the thermosphere</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">–80°C</div>
+        <div class="text-mist text-sm">Typical air temperature at aurora altitudes</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">Kp 5+</div>
+        <div class="text-mist text-sm">Geomagnetic index needed for mid-latitude aurora</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">11-yr</div>
+        <div class="text-mist text-sm">Solar cycle governing aurora frequency and intensity</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Bento Grid -->
+<section class="max-w-7xl mx-auto px-6 pb-10">
+  <div class="bento-main">
+
+    <!-- Formation Science (span-7) -->
+    <div class="span-7 reveal bento-card p-8">
+      <p class="section-label mb-4">Formation Science</p>
+      <h2 class="font-serif text-3xl text-frost mb-5">Painting the Polar Sky</h2>
+      <div class="space-y-4 text-mist leading-relaxed">
+        <p>The Sun continuously streams charged particles — electrons and protons — into space as the solar wind, travelling at 400–800 km/s. Earth's magnetosphere deflects most of this flow, but near the magnetic poles, field lines converge and funnel particles downward into the upper atmosphere along oval-shaped auroral zones.</p>
+        <p>When these energetic electrons collide with <strong class="text-frost">oxygen atoms</strong> at around 100–200 km altitude, they excite the atoms to higher energy states. As the oxygen returns to its ground state, it releases photons. At ~100 km, green (557.7 nm) is produced — the most common auroral colour. At higher altitudes above 200 km, excited oxygen emits rare red aurora. Below 100 km, nitrogen molecules produce blue and purple hues.</p>
+        <p>Aurora brightness and extent are governed by solar activity. <strong class="text-frost">Coronal mass ejections (CMEs)</strong> — massive bursts of solar plasma — can trigger geomagnetic storms when they strike Earth's magnetosphere, driving displays visible as far south as 45° latitude or lower during extreme events.</p>
+        <p>The Southern Hemisphere equivalent, <strong class="text-frost">Aurora Australis</strong>, mirrors the Borealis identically, with displays over Antarctica, southern New Zealand, and Patagonia.</p>
+      </div>
+    </div>
+
+    <!-- Kp Index / Notable events (span-5) -->
+    <div class="span-5 reveal bento-card p-8" style="transition-delay:0.15s">
+      <p class="section-label mb-4">Science & History</p>
+      <h2 class="font-serif text-2xl text-frost mb-5">The Kp Index & Great Events</h2>
+      <div class="space-y-4">
+        <div class="p-4 rounded-xl" style="background:rgba(127,219,202,0.08); border:1px solid rgba(127,219,202,0.15)">
+          <h3 class="font-semibold text-frost mb-1">The Kp Index</h3>
+          <p class="text-mist text-sm">A scale from 0–9 measuring global geomagnetic activity. Kp 5 = minor storm; Kp 7 = strong storm; Kp 9 = extreme. Visible aurora typically begins around Kp 4–5 for latitudes like Scotland or Canada.</p>
+        </div>
+        <div class="p-4 rounded-xl" style="background:rgba(74,144,217,0.06); border:1px solid rgba(74,144,217,0.12)">
+          <h3 class="font-semibold text-frost mb-1">The Carrington Event (1859)</h3>
+          <p class="text-mist text-sm">The most powerful solar storm ever recorded. Aurora was seen as far south as Cuba and Hawaii. Telegraph systems failed globally — some operators reported sparks and paper fires from the induced currents.</p>
+        </div>
+        <div class="p-4 rounded-xl" style="background:rgba(200,216,240,0.04); border:1px solid rgba(200,216,240,0.08)">
+          <h3 class="font-semibold text-frost mb-1">Color by Altitude</h3>
+          <p class="text-mist text-sm">Green: oxygen at ~100 km. Red: oxygen above 200 km (rare). Blue/purple: nitrogen below 100 km. Pink fringe: mix of nitrogen blue and oxygen green at the lower border.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Impact (span-12) -->
+    <div class="span-12 reveal bento-card p-8" style="transition-delay:0.2s">
+      <p class="section-label mb-4">Impact on Modern Infrastructure</p>
+      <h2 class="font-serif text-3xl text-frost mb-6">When Beauty Becomes Disruption</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div>
+          <h3 class="font-semibold text-sky mb-2">Power Grid Disruption</h3>
+          <p class="text-mist text-sm leading-relaxed">Geomagnetically induced currents (GICs) flow through long power transmission lines during storms, saturating transformers. The 1989 Quebec blackout left 6 million people without power for 9 hours after a Kp 9 storm. A Carrington-level event today could disable large portions of national grids for weeks.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-sky mb-2">GPS & Radio Interference</h3>
+          <p class="text-mist text-sm leading-relaxed">Solar storms expand and perturb the ionosphere, bending and delaying GPS signals. During the May 2024 Kp 9 storm, aviation GPS systems in North America reported significant degradation. HF radio blackouts are common on the sunlit side of Earth during solar flares.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-aurora mb-2">Pipeline Corrosion</h3>
+          <p class="text-mist text-sm leading-relaxed">GICs induced in long metal pipelines (Alaska Pipeline, Trans-Siberian lines) accelerate electrochemical corrosion. Engineers monitor geomagnetic activity and apply cathodic protection systems. Operators adjust operating pressures during severe storms to reduce stress on pipe welds.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Footer Strip -->
+<footer class="max-w-7xl mx-auto px-6 py-12 mt-4">
+  <div class="bento-card p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+    <a href="../index.html#phenomena" class="text-mist hover:text-white transition-colors text-sm flex items-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+      All Phenomena
+    </a>
+    <span class="text-mist/40 text-xs font-serif italic">Explore related phenomena</span>
+    <div class="flex gap-4">
+      <a href="polar-vortex.html" class="text-sm text-sky hover:text-white transition-colors">Polar Vortex &rarr;</a>
+      <a href="lightning.html" class="text-sm text-sky hover:text-white transition-colors">Lightning &rarr;</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } }), { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

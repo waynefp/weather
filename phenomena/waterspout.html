@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Waterspout — Atmosphera</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Outfit','sans-serif'], serif: ['DM Serif Display','serif'] },
+          colors: { ink: '#0d0f14', 'ink-2': '#13161d', 'ink-3': '#1a1e28', mist: '#8b9ab3', frost: '#c8d8f0', sky: '#4a90d9', aurora: '#7fdbca', storm: '#4b5f7c' }
+        }
+      }
+    };
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background-color: #0d0f14; color: #e8edf5; font-family: 'Outfit', sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+    body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999; opacity: 0.025; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); }
+    .nav-glass { background: rgba(13,15,20,0.75); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid rgba(200,216,240,0.06); }
+    .bento-card { background: rgba(26,30,40,0.6); border: 1px solid rgba(200,216,240,0.07); border-radius: 2rem; backdrop-filter: blur(12px); position: relative; overflow: hidden; }
+    .bento-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg, rgba(200,216,240,0.04) 0%, transparent 60%); pointer-events: none; }
+    .section-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #4a90d9; }
+    .tag { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; border: 1px solid rgba(200,216,240,0.12); background: rgba(200,216,240,0.04); color: #8b9ab3; }
+    .grad-blue { background: linear-gradient(135deg, #e8edf5 0%, #4a90d9 60%, #7fdbca 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s cubic-bezier(0.22,1,0.36,1), transform 0.8s cubic-bezier(0.22,1,0.36,1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .pulse-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(74,144,217,0.5); animation: pulseRing 2s ease-out infinite; }
+    @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } }
+    .bento-main { display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: minmax(80px, auto); gap: 1rem; }
+    .span-7 { grid-column: span 7; } .span-5 { grid-column: span 5; } .span-12 { grid-column: span 12; } .span-6 { grid-column: span 6; } .span-4 { grid-column: span 4; } .span-8 { grid-column: span 8; }
+    @media (max-width: 1024px) { .span-7, .span-5, .span-8 { grid-column: span 12; } .span-6 { grid-column: span 12; } }
+
+    /* Hero */
+    .hero-bg { background: radial-gradient(ellipse 80% 60% at 50% 60%, rgba(5,20,40,1) 0%, rgba(3,12,25,1) 100%); }
+    @keyframes spoutSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    @keyframes spoutSpin2 { from{transform:rotate(0deg)} to{transform:rotate(-360deg)} }
+    @keyframes sprayRise { 0%,100%{transform:scale(1); opacity:0.4} 50%{transform:scale(1.15); opacity:0.65} }
+    @keyframes waterWave { 0%,100%{transform:translateX(0) scaleX(1)} 50%{transform:translateX(-3%) scaleX(1.04)} }
+    .spout-outer { animation: spoutSpin 20s linear infinite; transform-origin: 600px 700px; }
+    .spout-inner { animation: spoutSpin2 12s linear infinite; transform-origin: 600px 700px; }
+    .spray-ring { animation: sprayRise 3s ease-in-out infinite; }
+    .ocean-wave { animation: waterWave 7s ease-in-out infinite; }
+    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #0d0f14; } ::-webkit-scrollbar-thumb { background: #7fdbca; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav-glass fixed top-0 left-0 right-0 z-50">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <a href="../index.html" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+      <div class="relative w-8 h-8">
+        <div class="pulse-ring"></div>
+        <svg viewBox="0 0 32 32" fill="none" class="w-8 h-8 relative z-10">
+          <circle cx="16" cy="16" r="6" fill="#4a90d9"/>
+          <path d="M16 4v4M16 24v4M4 16h4M24 16h4" stroke="#4a90d9" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+          <path d="M7.5 7.5l2.8 2.8M21.7 21.7l2.8 2.8M7.5 24.5l2.8-2.8M21.7 10.3l2.8-2.8" stroke="#7fdbca" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+        </svg>
+      </div>
+      <span class="font-serif text-xl tracking-tight text-white">Atmosphera</span>
+    </a>
+    <span class="hidden md:block font-serif text-base italic text-mist/50">Waterspout</span>
+    <a href="../index.html#phenomena" class="text-sm text-mist hover:text-white transition-colors duration-200 flex items-center gap-1.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+      All Phenomena
+    </a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero-bg relative min-h-[80vh] flex items-center justify-center overflow-hidden pt-16">
+  <svg class="absolute inset-0 w-full h-full" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="oceanBg" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="rgba(5,20,45,0.9)"/>
+        <stop offset="70%" stop-color="rgba(10,40,70,0.7)"/>
+        <stop offset="100%" stop-color="rgba(15,55,90,0.8)"/>
+      </linearGradient>
+      <filter id="spoutBlur"><feGaussianBlur stdDeviation="5"/></filter>
+      <filter id="sprayBlur"><feGaussianBlur stdDeviation="8"/></filter>
+    </defs>
+    <rect width="1200" height="800" fill="url(#oceanBg)"/>
+    <!-- Ocean surface -->
+    <g class="ocean-wave">
+      <ellipse cx="600" cy="700" rx="700" ry="40" fill="rgba(10,50,80,0.6)"/>
+      <ellipse cx="600" cy="690" rx="600" ry="25" fill="rgba(20,70,110,0.4)"/>
+    </g>
+    <!-- Waterspout funnel outer rings (top) -->
+    <g class="spout-outer">
+      <ellipse cx="600" cy="200" rx="120" ry="22" fill="none" stroke="rgba(74,144,217,0.25)" stroke-width="2" stroke-dasharray="10 5"/>
+      <ellipse cx="600" cy="200" rx="90" ry="16" fill="none" stroke="rgba(127,219,202,0.2)" stroke-width="1.5" stroke-dasharray="8 4"/>
+    </g>
+    <!-- Waterspout column body -->
+    <path d="M510 195 Q530 420 580 690 L620 690 Q670 420 690 195 Z" fill="rgba(74,144,217,0.1)" filter="url(#spoutBlur)"/>
+    <!-- Inner spiral rings descending -->
+    <g class="spout-inner">
+      <ellipse cx="600" cy="320" rx="70" ry="13" fill="none" stroke="rgba(127,219,202,0.2)" stroke-width="1.5"/>
+      <ellipse cx="600" cy="450" rx="50" ry="9" fill="none" stroke="rgba(74,144,217,0.2)" stroke-width="1"/>
+      <ellipse cx="600" cy="570" rx="30" ry="6" fill="none" stroke="rgba(127,219,202,0.25)" stroke-width="1"/>
+    </g>
+    <!-- Spray ring at water surface -->
+    <g class="spray-ring">
+      <ellipse cx="600" cy="690" rx="90" ry="18" fill="none" stroke="rgba(127,219,202,0.4)" stroke-width="3" filter="url(#sprayBlur)"/>
+      <ellipse cx="600" cy="688" rx="60" ry="12" fill="rgba(127,219,202,0.15)" filter="url(#sprayBlur)"/>
+    </g>
+    <!-- Dark spot on water -->
+    <ellipse cx="600" cy="695" rx="40" ry="10" fill="rgba(5,20,40,0.6)"/>
+    <!-- Cloud above -->
+    <ellipse cx="600" cy="120" rx="300" ry="70" fill="rgba(15,30,60,0.7)"/>
+    <ellipse cx="600" cy="140" rx="220" ry="55" fill="rgba(20,40,75,0.6)"/>
+  </svg>
+
+  <div class="relative z-10 text-center max-w-3xl mx-auto px-6">
+    <div class="reveal mb-4"><span class="tag">Marine</span></div>
+    <h1 class="reveal font-serif text-5xl md:text-7xl leading-tight mb-6" style="transition-delay:0.1s">
+      <span class="grad-blue">Waterspout</span>
+    </h1>
+    <p class="reveal text-mist text-lg md:text-xl max-w-xl mx-auto leading-relaxed" style="transition-delay:0.2s">
+      A rotating column of air connecting cloud and ocean — sometimes born from the sea surface upward on a sunny day, sometimes descending from a violent supercell. Beautiful and treacherous in equal measure.
+    </p>
+  </div>
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-ink to-transparent"></div>
+</section>
+
+<!-- Quick Stats Strip -->
+<section class="max-w-7xl mx-auto px-6 py-10">
+  <div class="reveal bento-card p-6 md:p-8">
+    <p class="section-label mb-6">Key Statistics</p>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">50–100 m</div>
+        <div class="text-mist text-sm">Typical diameter of a fair-weather waterspout</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">&lt;80 km/h</div>
+        <div class="text-mist text-sm">Wind speed of most fair-weather waterspouts</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">20–30 min</div>
+        <div class="text-mist text-sm">Typical lifespan before the vortex dissipates</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">Florida Keys</div>
+        <div class="text-mist text-sm">World hotspot — hundreds of events recorded annually</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Bento Grid -->
+<section class="max-w-7xl mx-auto px-6 pb-10">
+  <div class="bento-main">
+
+    <!-- Formation (span-7) -->
+    <div class="span-7 reveal bento-card p-8">
+      <p class="section-label mb-4">Formation Science</p>
+      <h2 class="font-serif text-3xl text-frost mb-5">Two Entirely Different Beasts</h2>
+      <div class="space-y-4 text-mist leading-relaxed">
+        <p>Waterspouts fall into two fundamentally different categories with completely different formation mechanisms — and very different danger levels.</p>
+        <p><strong class="text-frost">Fair-weather waterspouts</strong> form from the water surface upward — the opposite of a tornado. They begin as a <strong class="text-frost">dark spot</strong> on the ocean surface where localised wind convergence creates a distinct low-pressure area. A <strong class="text-frost">spiral pattern</strong> of light and dark bands expands outward from this spot as rotation begins. A <strong class="text-frost">spray ring</strong> of lifted water droplets forms around the vortex base. Finally, the <strong class="text-frost">funnel</strong> descends from a cumulus cloud overhead to meet the rising column — creating the visible waterspout. The entire process can take just 15–20 minutes. These are relatively weak (rarely exceeding EF0 tornado equivalent) and dissipate quickly if they move over land.</p>
+        <p><strong class="text-frost">Tornadic waterspouts</strong> are simply land tornadoes that have moved over water, or supercell tornadoes that form directly over water. They are far more intense — capable of EF3+ winds — and follow the same mesocyclone formation process as their land-based counterparts. A tornadic waterspout should be treated with the same respect as a tornado.</p>
+        <p>The <strong class="text-frost">Florida Keys</strong> experience more fair-weather waterspouts than anywhere else on Earth. The shallow, warm waters of the Gulf Stream generate intense surface heating; sea breeze boundaries from both coasts of the narrow Keys converge, creating ideal low-level wind shear and moisture for vortex development.</p>
+      </div>
+    </div>
+
+    <!-- Stages / Florida / vs Tornado (span-5) -->
+    <div class="span-5 reveal bento-card p-8" style="transition-delay:0.15s">
+      <p class="section-label mb-4">Formation Stages & Facts</p>
+      <h2 class="font-serif text-2xl text-frost mb-5">Five Stages & Key Differences</h2>
+      <div class="space-y-3">
+        <div class="flex gap-3 items-start">
+          <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5" style="background:rgba(127,219,202,0.2); color:#7fdbca">1</div>
+          <div><p class="text-frost text-sm font-semibold">Dark Spot</p><p class="text-mist text-xs">Distinct shadow on water surface marking the low-pressure core</p></div>
+        </div>
+        <div class="flex gap-3 items-start">
+          <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5" style="background:rgba(127,219,202,0.2); color:#7fdbca">2</div>
+          <div><p class="text-frost text-sm font-semibold">Spiral Pattern</p><p class="text-mist text-xs">Light and dark bands expand outward from the dark spot as rotation initiates</p></div>
+        </div>
+        <div class="flex gap-3 items-start">
+          <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5" style="background:rgba(127,219,202,0.2); color:#7fdbca">3</div>
+          <div><p class="text-frost text-sm font-semibold">Spray Ring</p><p class="text-mist text-xs">Spinning water droplets lifted off the surface in a circular ring around the vortex</p></div>
+        </div>
+        <div class="flex gap-3 items-start">
+          <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5" style="background:rgba(127,219,202,0.2); color:#7fdbca">4</div>
+          <div><p class="text-frost text-sm font-semibold">Mature Funnel</p><p class="text-mist text-xs">Condensation funnel connects water surface to cloud base — the fully developed spout</p></div>
+        </div>
+        <div class="flex gap-3 items-start">
+          <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5" style="background:rgba(74,144,217,0.2); color:#4a90d9">5</div>
+          <div><p class="text-frost text-sm font-semibold">Decay</p><p class="text-mist text-xs">Rotation diminishes, funnel thins and dissipates — especially rapid when hitting land</p></div>
+        </div>
+        <div class="mt-2 p-3 rounded-xl" style="background:rgba(200,216,240,0.04); border:1px solid rgba(200,216,240,0.08)">
+          <p class="text-mist text-xs">Fair-weather waterspouts are generally 10–100× weaker than tornadic waterspouts. Do not attempt to navigate through either type by boat.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Impact (span-12) -->
+    <div class="span-12 reveal bento-card p-8" style="transition-delay:0.2s">
+      <p class="section-label mb-4">Impact</p>
+      <h2 class="font-serif text-3xl text-frost mb-6">Marine Hazard, Fish Rain & Coastal Risk</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div>
+          <h3 class="font-semibold text-sky mb-2">Boat & Ship Danger</h3>
+          <p class="text-mist text-sm leading-relaxed">Even a relatively weak fair-weather waterspout can capsize a small vessel or damage a boat's rigging and electronics. The US Coast Guard issues waterspout advisories when multiple events are detected. Mariners are advised to steer perpendicular to the apparent motion of a waterspout to escape its path.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-sky mb-2">Raining Fish & Frogs</h3>
+          <p class="text-mist text-sm leading-relaxed">Waterspouts can lift small fish, frogs, and other aquatic life from shallow waters and carry them inland, where they fall during the accompanying rain. Historical "fish rain" events in Manna, Sri Lanka (2012) and Lajamanu, Australia (2010) were linked to this mechanism. The animals sometimes survive the journey.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-aurora mb-2">Coastal & Port Risk</h3>
+          <p class="text-mist text-sm leading-relaxed">When waterspouts make landfall they become land tornadoes — even the weaker fair-weather variety can damage structures, overturn vehicles, and injure people near the coast. Florida's Keys Highway and waterfront areas issue waterspout warnings that affect tourism, sport fishing, and emergency services throughout summer months.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Footer Strip -->
+<footer class="max-w-7xl mx-auto px-6 py-12 mt-4">
+  <div class="bento-card p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+    <a href="../index.html#phenomena" class="text-mist hover:text-white transition-colors text-sm flex items-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+      All Phenomena
+    </a>
+    <span class="text-mist/40 text-xs font-serif italic">Explore related phenomena</span>
+    <div class="flex gap-4">
+      <a href="tornado.html" class="text-sm text-sky hover:text-white transition-colors">Tornado &rarr;</a>
+      <a href="hurricane.html" class="text-sm text-sky hover:text-white transition-colors">Hurricane &rarr;</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } }), { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

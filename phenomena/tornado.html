@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tornado & Supercell — Atmosphera</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Outfit','sans-serif'], serif: ['DM Serif Display','serif'] },
+          colors: { ink: '#0d0f14', 'ink-2': '#13161d', 'ink-3': '#1a1e28', mist: '#8b9ab3', frost: '#c8d8f0', sky: '#4a90d9', aurora: '#7fdbca', storm: '#4b5f7c' }
+        }
+      }
+    };
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background-color: #0d0f14; color: #e8edf5; font-family: 'Outfit', sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+    body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999; opacity: 0.025; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); }
+    .nav-glass { background: rgba(13,15,20,0.75); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid rgba(200,216,240,0.06); }
+    .bento-card { background: rgba(26,30,40,0.6); border: 1px solid rgba(200,216,240,0.07); border-radius: 2rem; backdrop-filter: blur(12px); position: relative; overflow: hidden; }
+    .bento-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg, rgba(200,216,240,0.04) 0%, transparent 60%); pointer-events: none; }
+    .section-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #4a90d9; }
+    .tag { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; border: 1px solid rgba(200,216,240,0.12); background: rgba(200,216,240,0.04); color: #8b9ab3; }
+    .grad-blue { background: linear-gradient(135deg, #e8edf5 0%, #4a90d9 60%, #7fdbca 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s cubic-bezier(0.22,1,0.36,1), transform 0.8s cubic-bezier(0.22,1,0.36,1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .pulse-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(74,144,217,0.5); animation: pulseRing 2s ease-out infinite; }
+    @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } }
+    .bento-main { display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: minmax(80px, auto); gap: 1rem; }
+    .span-7 { grid-column: span 7; } .span-5 { grid-column: span 5; } .span-12 { grid-column: span 12; } .span-6 { grid-column: span 6; } .span-4 { grid-column: span 4; } .span-8 { grid-column: span 8; }
+    @media (max-width: 1024px) { .span-7, .span-5, .span-8 { grid-column: span 12; } .span-6 { grid-column: span 12; } }
+
+    /* Hero */
+    .hero-bg { background: radial-gradient(ellipse 70% 80% at 50% 30%, rgba(28,32,45,0.95) 0%, #0a0c10 100%); }
+    @keyframes funnelSpin { from{transform:rotate(0deg) scaleX(1)} to{transform:rotate(360deg) scaleX(1)} }
+    @keyframes funnelPulse { 0%,100%{opacity:0.7} 50%{opacity:1} }
+    .funnel-rotate { animation: funnelSpin 12s linear infinite; transform-origin: center 20%; }
+    .funnel-pulse { animation: funnelPulse 3s ease-in-out infinite; }
+    @keyframes debrisSpin { from{transform:rotate(0deg) translateX(60px) rotate(0deg)} to{transform:rotate(360deg) translateX(60px) rotate(-360deg)} }
+    @keyframes debrisSpin2 { from{transform:rotate(120deg) translateX(45px) rotate(-120deg)} to{transform:rotate(480deg) translateX(45px) rotate(-480deg)} }
+    .debris-1 { animation: debrisSpin 4s linear infinite; transform-origin: 600px 700px; }
+    .debris-2 { animation: debrisSpin2 3s linear infinite; transform-origin: 600px 700px; }
+    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #0d0f14; } ::-webkit-scrollbar-thumb { background: #4a90d9; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav-glass fixed top-0 left-0 right-0 z-50">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <a href="../index.html" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+      <div class="relative w-8 h-8">
+        <div class="pulse-ring"></div>
+        <svg viewBox="0 0 32 32" fill="none" class="w-8 h-8 relative z-10">
+          <circle cx="16" cy="16" r="6" fill="#4a90d9"/>
+          <path d="M16 4v4M16 24v4M4 16h4M24 16h4" stroke="#4a90d9" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+          <path d="M7.5 7.5l2.8 2.8M21.7 21.7l2.8 2.8M7.5 24.5l2.8-2.8M21.7 10.3l2.8-2.8" stroke="#7fdbca" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+        </svg>
+      </div>
+      <span class="font-serif text-xl tracking-tight text-white">Atmosphera</span>
+    </a>
+    <span class="hidden md:block font-serif text-base italic text-mist/50">Tornado & Supercell</span>
+    <a href="../index.html#phenomena" class="text-sm text-mist hover:text-white transition-colors duration-200 flex items-center gap-1.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+      All Phenomena
+    </a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero-bg relative min-h-[80vh] flex items-center justify-center overflow-hidden pt-16">
+  <svg class="absolute inset-0 w-full h-full funnel-pulse" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <radialGradient id="funnelGrad" cx="50%" cy="0%" r="100%">
+        <stop offset="0%" stop-color="rgba(60,70,100,0.9)"/>
+        <stop offset="100%" stop-color="rgba(15,18,30,0.3)"/>
+      </radialGradient>
+      <filter id="funnelBlur"><feGaussianBlur stdDeviation="3"/></filter>
+    </defs>
+    <!-- Storm cloud mass -->
+    <ellipse cx="600" cy="80" rx="500" ry="120" fill="rgba(25,30,50,0.8)"/>
+    <ellipse cx="600" cy="60" rx="380" ry="90" fill="rgba(35,42,65,0.7)"/>
+    <!-- Funnel / concentric rings shrinking to ground -->
+    <ellipse cx="600" cy="160" rx="200" ry="40" fill="none" stroke="rgba(100,120,180,0.4)" stroke-width="2"/>
+    <ellipse cx="600" cy="250" rx="160" ry="30" fill="none" stroke="rgba(90,110,170,0.45)" stroke-width="2"/>
+    <ellipse cx="600" cy="340" rx="120" ry="22" fill="none" stroke="rgba(80,100,160,0.5)" stroke-width="1.5"/>
+    <ellipse cx="600" cy="420" rx="80" ry="15" fill="none" stroke="rgba(70,90,150,0.55)" stroke-width="1.5"/>
+    <ellipse cx="600" cy="490" rx="45" ry="9" fill="none" stroke="rgba(60,80,140,0.6)" stroke-width="1"/>
+    <ellipse cx="600" cy="550" rx="20" ry="5" fill="none" stroke="rgba(100,130,200,0.7)" stroke-width="1"/>
+    <!-- Funnel body fill -->
+    <path d="M400 160 Q420 350 560 560 L640 560 Q780 350 800 160 Z" fill="url(#funnelGrad)" opacity="0.5"/>
+    <!-- Rotating funnel outer ring -->
+    <g class="funnel-rotate">
+      <ellipse cx="600" cy="340" rx="130" ry="25" fill="none" stroke="rgba(74,144,217,0.2)" stroke-width="1" stroke-dasharray="8 4"/>
+    </g>
+    <!-- Ground debris cloud -->
+    <ellipse cx="600" cy="580" rx="120" ry="25" fill="rgba(40,50,80,0.5)" filter="url(#funnelBlur)"/>
+    <ellipse cx="600" cy="575" rx="80" ry="18" fill="rgba(50,60,90,0.4)" filter="url(#funnelBlur)"/>
+    <!-- Debris particles -->
+    <g class="debris-1"><rect x="596" y="556" width="4" height="4" fill="rgba(140,160,200,0.6)" rx="1"/></g>
+    <g class="debris-2"><rect x="596" y="556" width="3" height="3" fill="rgba(120,140,180,0.5)" rx="1"/></g>
+  </svg>
+
+  <div class="relative z-10 text-center max-w-3xl mx-auto px-6">
+    <div class="reveal mb-4"><span class="tag">Severe</span></div>
+    <h1 class="reveal font-serif text-5xl md:text-7xl leading-tight mb-6" style="transition-delay:0.1s">
+      <span class="grad-blue">Tornado &</span><br/>Supercell
+    </h1>
+    <p class="reveal text-mist text-lg md:text-xl max-w-xl mx-auto leading-relaxed" style="transition-delay:0.2s">
+      Born from the world's most violent thunderstorms, tornadoes concentrate kinetic energy into a column scarcely wider than a city block — yet capable of total devastation in seconds.
+    </p>
+  </div>
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-ink to-transparent"></div>
+</section>
+
+<!-- Quick Stats Strip -->
+<section class="max-w-7xl mx-auto px-6 py-10">
+  <div class="reveal bento-card p-6 md:p-8">
+    <p class="section-label mb-6">Key Statistics</p>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">322+ km/h</div>
+        <div class="text-mist text-sm">EF5 wind speed threshold — total destruction</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">~800 m</div>
+        <div class="text-mist text-sm">Average tornado width at the ground</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">~8 km</div>
+        <div class="text-mist text-sm">Average path length before dissipation</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">1,000+</div>
+        <div class="text-mist text-sm">Tornadoes reported annually in the United States</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Bento Grid -->
+<section class="max-w-7xl mx-auto px-6 pb-10">
+  <div class="bento-main">
+
+    <!-- Formation (span-7) -->
+    <div class="span-7 reveal bento-card p-8">
+      <p class="section-label mb-4">Formation Science</p>
+      <h2 class="font-serif text-3xl text-frost mb-5">From Wind Shear to Funnel</h2>
+      <div class="space-y-4 text-mist leading-relaxed">
+        <p>Most violent tornadoes emerge from <strong class="text-frost">supercell thunderstorms</strong> — rotating, long-lived storms driven by a persistent mesocyclone. The process begins aloft, not at the ground.</p>
+        <p>When wind speed increases and direction shifts with altitude — known as <strong class="text-frost">wind shear</strong> — it creates horizontal rotation in the lower atmosphere, like an invisible rolling pin lying on its side. A powerful updraft in a developing supercell can tilt this horizontal rotation into the vertical, initiating a rotating updraft called a <strong class="text-frost">mesocyclone</strong> several kilometres wide.</p>
+        <p>As the mesocyclone intensifies, the lowering, rotating cloud base forms a <strong class="text-frost">wall cloud</strong>. Tornadogenesis — still not fully understood — occurs when air accelerating into the storm base wraps the rotation tightly into a narrow, intense column. The <strong class="text-frost">funnel cloud</strong> becomes visible as the vortex pressure drops enough to condense moisture. It becomes a tornado the instant the funnel touches the ground.</p>
+        <p>The lifecycle typically lasts minutes to an hour. Dissipation begins when the rear-flank downdraft wraps cool air completely around the base, cutting off the inflow of warm moist air that feeds the vortex.</p>
+      </div>
+    </div>
+
+    <!-- EF Scale / Alley (span-5) -->
+    <div class="span-5 reveal bento-card p-8" style="transition-delay:0.15s">
+      <p class="section-label mb-4">Scale & Geography</p>
+      <h2 class="font-serif text-2xl text-frost mb-5">EF Scale & Tornado Country</h2>
+      <div class="space-y-3">
+        <div class="flex items-start gap-3 p-3 rounded-xl" style="background:rgba(127,219,202,0.06); border:1px solid rgba(127,219,202,0.1)">
+          <span class="font-bold text-aurora text-sm mt-0.5 shrink-0">EF0–1</span>
+          <p class="text-mist text-sm">65–177 km/h. Broken branches, minor roof damage. Most tornadoes (80%) fall here.</p>
+        </div>
+        <div class="flex items-start gap-3 p-3 rounded-xl" style="background:rgba(74,144,217,0.06); border:1px solid rgba(74,144,217,0.1)">
+          <span class="font-bold text-sky text-sm mt-0.5 shrink-0">EF2–3</span>
+          <p class="text-mist text-sm">178–266 km/h. Roofs torn off, cars overturned, trees uprooted. Significant injuries and fatalities.</p>
+        </div>
+        <div class="flex items-start gap-3 p-3 rounded-xl" style="background:rgba(200,100,100,0.06); border:1px solid rgba(200,100,100,0.1)">
+          <span class="font-bold text-frost text-sm mt-0.5 shrink-0">EF4–5</span>
+          <p class="text-mist text-sm">267+ km/h. Well-built homes levelled, vehicles thrown, total destruction. Less than 2% of tornadoes.</p>
+        </div>
+        <div class="p-3 rounded-xl" style="background:rgba(200,216,240,0.04); border:1px solid rgba(200,216,240,0.08)">
+          <h3 class="font-semibold text-frost text-sm mb-1">Tornado Alley & Dixie Alley</h3>
+          <p class="text-mist text-sm">The classic Tornado Alley (TX, OK, KS, NE) sees frequent spring activity. "Dixie Alley" (MS, AL, TN) produces more nocturnal and winter tornadoes — when people are asleep — making them disproportionately deadly.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notable Events (span-12) -->
+    <div class="span-12 reveal bento-card p-8" style="transition-delay:0.2s">
+      <p class="section-label mb-4">Notable Events</p>
+      <h2 class="font-serif text-3xl text-frost mb-6">History's Most Destructive Tornadoes</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div>
+          <h3 class="font-semibold text-sky mb-2">Joplin, Missouri — 2011</h3>
+          <p class="text-mist text-sm leading-relaxed">EF5. 1.6 km wide. 89 km path. 161 fatalities. Destroyed a hospital, flattened neighbourhoods and killed more people than any US tornado since 1947. Wind speeds estimated at 322+ km/h.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-sky mb-2">Moore, Oklahoma — 2013</h3>
+          <p class="text-mist text-sm leading-relaxed">EF5 struck Moore for the third time in 14 years. 2.1 km wide at peak. 24 fatalities including 7 children in an elementary school. Led to widespread storm shelter legislation in Oklahoma.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-aurora mb-2">El Reno, Oklahoma — 2013</h3>
+          <p class="text-mist text-sm leading-relaxed">The widest tornado ever recorded: 4.2 km at peak width, larger than some cities. EF3 rating. Killed 3 veteran storm chasers when it unexpectedly shifted direction and expanded rapidly in seconds.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Footer Strip -->
+<footer class="max-w-7xl mx-auto px-6 py-12 mt-4">
+  <div class="bento-card p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+    <a href="../index.html#phenomena" class="text-mist hover:text-white transition-colors text-sm flex items-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+      All Phenomena
+    </a>
+    <span class="text-mist/40 text-xs font-serif italic">Explore related phenomena</span>
+    <div class="flex gap-4">
+      <a href="hurricane.html" class="text-sm text-sky hover:text-white transition-colors">Hurricane &rarr;</a>
+      <a href="lightning.html" class="text-sm text-sky hover:text-white transition-colors">Lightning &rarr;</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } }), { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

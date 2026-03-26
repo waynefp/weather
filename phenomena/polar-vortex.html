@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polar Vortex — Atmosphera</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Outfit','sans-serif'], serif: ['DM Serif Display','serif'] },
+          colors: { ink: '#0d0f14', 'ink-2': '#13161d', 'ink-3': '#1a1e28', mist: '#8b9ab3', frost: '#c8d8f0', sky: '#4a90d9', aurora: '#7fdbca', storm: '#4b5f7c' }
+        }
+      }
+    };
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background-color: #0d0f14; color: #e8edf5; font-family: 'Outfit', sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+    body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999; opacity: 0.025; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); }
+    .nav-glass { background: rgba(13,15,20,0.75); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid rgba(200,216,240,0.06); }
+    .bento-card { background: rgba(26,30,40,0.6); border: 1px solid rgba(200,216,240,0.07); border-radius: 2rem; backdrop-filter: blur(12px); position: relative; overflow: hidden; }
+    .bento-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg, rgba(200,216,240,0.04) 0%, transparent 60%); pointer-events: none; }
+    .section-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #4a90d9; }
+    .tag { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; border: 1px solid rgba(200,216,240,0.12); background: rgba(200,216,240,0.04); color: #8b9ab3; }
+    .grad-blue { background: linear-gradient(135deg, #e8edf5 0%, #4a90d9 60%, #7fdbca 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .grad-cold { background: linear-gradient(135deg, #c8d8f0 0%, #4a90d9 50%, #7fdbca 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s cubic-bezier(0.22,1,0.36,1), transform 0.8s cubic-bezier(0.22,1,0.36,1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .pulse-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(74,144,217,0.5); animation: pulseRing 2s ease-out infinite; }
+    @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } }
+    .bento-main { display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: minmax(80px, auto); gap: 1rem; }
+    .span-7 { grid-column: span 7; } .span-5 { grid-column: span 5; } .span-12 { grid-column: span 12; } .span-6 { grid-column: span 6; } .span-4 { grid-column: span 4; } .span-8 { grid-column: span 8; }
+    @media (max-width: 1024px) { .span-7, .span-5, .span-8 { grid-column: span 12; } .span-6 { grid-column: span 12; } }
+
+    /* Hero */
+    .hero-bg { background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(8,12,35,1) 0%, rgba(4,6,18,1) 100%); }
+    @keyframes vortexSpin { from{transform:rotate(0deg)} to{transform:rotate(-360deg)} }
+    @keyframes vortexSpin2 { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    @keyframes vortexPulse { 0%,100%{opacity:0.5} 50%{opacity:0.8} }
+    @keyframes auroraPeek { 0%,100%{opacity:0.2; transform:scaleY(1)} 50%{opacity:0.45; transform:scaleY(1.1)} }
+    .vortex-ring-1 { animation: vortexSpin 60s linear infinite; transform-origin: 600px 400px; }
+    .vortex-ring-2 { animation: vortexSpin2 45s linear infinite; transform-origin: 600px 400px; }
+    .vortex-ring-3 { animation: vortexSpin 30s linear infinite; transform-origin: 600px 400px; }
+    .vortex-ring-4 { animation: vortexSpin2 80s linear infinite; transform-origin: 600px 400px; }
+    .vortex-pulse { animation: vortexPulse 6s ease-in-out infinite; }
+    .aurora-peek { animation: auroraPeek 9s ease-in-out infinite; }
+    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #0d0f14; } ::-webkit-scrollbar-thumb { background: #4a90d9; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav-glass fixed top-0 left-0 right-0 z-50">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <a href="../index.html" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+      <div class="relative w-8 h-8">
+        <div class="pulse-ring"></div>
+        <svg viewBox="0 0 32 32" fill="none" class="w-8 h-8 relative z-10">
+          <circle cx="16" cy="16" r="6" fill="#4a90d9"/>
+          <path d="M16 4v4M16 24v4M4 16h4M24 16h4" stroke="#4a90d9" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+          <path d="M7.5 7.5l2.8 2.8M21.7 21.7l2.8 2.8M7.5 24.5l2.8-2.8M21.7 10.3l2.8-2.8" stroke="#7fdbca" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+        </svg>
+      </div>
+      <span class="font-serif text-xl tracking-tight text-white">Atmosphera</span>
+    </a>
+    <span class="hidden md:block font-serif text-base italic text-mist/50">Polar Vortex</span>
+    <a href="../index.html#phenomena" class="text-sm text-mist hover:text-white transition-colors duration-200 flex items-center gap-1.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+      All Phenomena
+    </a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero-bg relative min-h-[80vh] flex items-center justify-center overflow-hidden pt-16">
+  <svg class="absolute inset-0 w-full h-full" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <radialGradient id="vortexCore" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="rgba(20,30,80,0.5)"/>
+        <stop offset="60%" stop-color="rgba(8,15,40,0.7)"/>
+        <stop offset="100%" stop-color="rgba(4,8,20,0.9)"/>
+      </radialGradient>
+      <filter id="vortexGlow"><feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="ringBlur"><feGaussianBlur stdDeviation="3"/></filter>
+    </defs>
+    <rect width="1200" height="800" fill="url(#vortexCore)"/>
+    <!-- Aurora hints at top -->
+    <g class="aurora-peek">
+      <rect x="0" y="40" width="1200" height="80" fill="rgba(127,219,202,0.08)" filter="url(#ringBlur)" rx="50%"/>
+      <rect x="0" y="80" width="1200" height="50" fill="rgba(74,144,217,0.06)" filter="url(#ringBlur)" rx="50%"/>
+    </g>
+    <!-- Outer circumpolar rings -->
+    <g class="vortex-ring-4">
+      <circle cx="600" cy="400" r="380" fill="none" stroke="rgba(74,144,217,0.08)" stroke-width="60" filter="url(#ringBlur)"/>
+    </g>
+    <g class="vortex-ring-1 vortex-pulse">
+      <circle cx="600" cy="400" r="300" fill="none" stroke="rgba(74,144,217,0.12)" stroke-width="2" stroke-dasharray="20 10"/>
+      <circle cx="600" cy="400" r="280" fill="none" stroke="rgba(127,219,202,0.08)" stroke-width="1.5" stroke-dasharray="15 8"/>
+    </g>
+    <g class="vortex-ring-2">
+      <circle cx="600" cy="400" r="220" fill="none" stroke="rgba(74,144,217,0.15)" stroke-width="2" stroke-dasharray="12 6"/>
+      <circle cx="600" cy="400" r="200" fill="none" stroke="rgba(200,216,240,0.07)" stroke-width="1"/>
+    </g>
+    <g class="vortex-ring-3 vortex-pulse">
+      <circle cx="600" cy="400" r="140" fill="none" stroke="rgba(127,219,202,0.18)" stroke-width="2" stroke-dasharray="8 5"/>
+      <circle cx="600" cy="400" r="120" fill="none" stroke="rgba(74,144,217,0.2)" stroke-width="1.5"/>
+    </g>
+    <!-- Inner cold core -->
+    <circle cx="600" cy="400" r="60" fill="rgba(10,20,60,0.7)" filter="url(#vortexGlow)"/>
+    <circle cx="600" cy="400" r="35" fill="rgba(15,25,70,0.8)"/>
+    <circle cx="600" cy="400" r="15" fill="rgba(20,35,90,0.9)"/>
+    <!-- Latitude lines suggesting global scale -->
+    <ellipse cx="600" cy="400" rx="600" ry="80" fill="none" stroke="rgba(74,144,217,0.04)" stroke-width="1"/>
+    <ellipse cx="600" cy="400" rx="550" ry="60" fill="none" stroke="rgba(74,144,217,0.03)" stroke-width="1"/>
+  </svg>
+
+  <div class="relative z-10 text-center max-w-3xl mx-auto px-6">
+    <div class="reveal mb-4"><span class="tag">Arctic</span></div>
+    <h1 class="reveal font-serif text-5xl md:text-7xl leading-tight mb-6" style="transition-delay:0.1s">
+      <span class="grad-cold">Polar Vortex</span>
+    </h1>
+    <p class="reveal text-mist text-lg md:text-xl max-w-xl mx-auto leading-relaxed" style="transition-delay:0.2s">
+      A massive circumpolar whirlpool of frigid air in the stratosphere — normally caged near the North Pole, but capable of breaking apart and sending Arctic air plunging across continents.
+    </p>
+  </div>
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-ink to-transparent"></div>
+</section>
+
+<!-- Quick Stats Strip -->
+<section class="max-w-7xl mx-auto px-6 py-10">
+  <div class="reveal bento-card p-6 md:p-8">
+    <p class="section-label mb-6">Key Statistics</p>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">–40°C</div>
+        <div class="text-mist text-sm">Wind chill experienced during major polar vortex intrusions</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">30–50 km</div>
+        <div class="text-mist text-sm">Altitude of the polar vortex in the stratosphere</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">30–50 km/h</div>
+        <div class="text-mist text-sm">Typical surface wind speeds during Arctic outbreaks</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">Annual</div>
+        <div class="text-mist text-sm">Polar vortex exists every winter — disruptions are the unusual event</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Bento Grid -->
+<section class="max-w-7xl mx-auto px-6 pb-10">
+  <div class="bento-main">
+
+    <!-- Formation (span-7) -->
+    <div class="span-7 reveal bento-card p-8">
+      <p class="section-label mb-4">Formation Science</p>
+      <h2 class="font-serif text-3xl text-frost mb-5">The Arctic Cage & Its Breakdown</h2>
+      <div class="space-y-4 text-mist leading-relaxed">
+        <p>The polar vortex is a permanent feature of Earth's atmosphere during winter — a vast, persistent area of low pressure and cold air encircling the polar regions in the <strong class="text-frost">stratosphere</strong> (roughly 10–50 km altitude). In its healthy state, it resembles a spinning top, stabilised by the temperature contrast between the freezing Arctic and the warmer mid-latitudes.</p>
+        <p>The <strong class="text-frost">polar jet stream</strong> at the boundary between arctic and mid-latitude air acts as a barrier, keeping the bitterly cold air locked in the north. When the jet stream flows in a tight, circular pattern (positive <strong class="text-frost">Arctic Oscillation / AO index</strong>), this containment holds. Winters across the Northern Hemisphere mid-latitudes tend to be milder than average.</p>
+        <p>When the vortex weakens — due to a process called <strong class="text-frost">Sudden Stratospheric Warming (SSW)</strong> — the containment fails. In an SSW event, stratospheric temperatures over the pole rise by 20–50°C in just a few days (hence "sudden"), caused by vertically propagating atmospheric waves disrupting the vortex structure. The vortex splits or elongates, and the jet stream buckles into large lobes that push Arctic air deep into mid-latitudes.</p>
+        <p>This "displacement" or "splitting" of the vortex can influence surface weather for weeks to months after the stratospheric event — a remarkable connection between the stratosphere 30 km above and the ground below. SSW events precede major cold outbreaks by typically 2–4 weeks, giving meteorologists advance warning.</p>
+      </div>
+    </div>
+
+    <!-- SSW / AO / Notable years (span-5) -->
+    <div class="span-5 reveal bento-card p-8" style="transition-delay:0.15s">
+      <p class="section-label mb-4">Mechanisms & Indices</p>
+      <h2 class="font-serif text-2xl text-frost mb-5">Stratosphere to Surface</h2>
+      <div class="space-y-4">
+        <div class="p-4 rounded-xl" style="background:rgba(74,144,217,0.08); border:1px solid rgba(74,144,217,0.15)">
+          <h3 class="font-semibold text-frost mb-1 text-sm">Stratosphere vs Troposphere</h3>
+          <p class="text-mist text-sm">The troposphere (0–12 km) is where weather happens. The stratosphere (12–50 km) sits above it. The polar vortex lives in the stratosphere but influences the troposphere below through changes in the jet stream and pressure patterns.</p>
+        </div>
+        <div class="p-4 rounded-xl" style="background:rgba(127,219,202,0.06); border:1px solid rgba(127,219,202,0.1)">
+          <h3 class="font-semibold text-frost mb-1 text-sm">The AO Index</h3>
+          <p class="text-mist text-sm">Positive AO: tight vortex, mild winters at mid-latitudes. Negative AO: weak/disrupted vortex, Arctic air escapes south. The AO is the primary teleconnection index for predicting cold season extremes weeks in advance.</p>
+        </div>
+        <div class="p-4 rounded-xl" style="background:rgba(200,216,240,0.04); border:1px solid rgba(200,216,240,0.08)">
+          <h3 class="font-semibold text-frost mb-1 text-sm">Notable SSW Events</h3>
+          <p class="text-mist text-sm">January 2019: Vortex split in two. Chicago hit –30°C actual temperature, colder than parts of Antarctica. February 2021: Vortex disruption drove Texas winter storm Uri — unprecedented cold caused widespread power grid failure, 246 deaths.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Impact (span-12) -->
+    <div class="span-12 reveal bento-card p-8" style="transition-delay:0.2s">
+      <p class="section-label mb-4">Impact</p>
+      <h2 class="font-serif text-3xl text-frost mb-6">When the Arctic Escapes: 2019 Chicago & Beyond</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div>
+          <h3 class="font-semibold text-sky mb-2">Chicago 2019: Colder Than Antarctica</h3>
+          <p class="text-mist text-sm leading-relaxed">During the January 2019 vortex split, Chicago recorded –30°C actual temperature with wind chills reaching –45°C. Amtrak cancelled all trains. Schools shut across multiple states. Rail companies lit fires under train tracks to prevent the steel from contracting and warping. At least 22 deaths were attributed directly to the cold.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-sky mb-2">Infrastructure Strain</h3>
+          <p class="text-mist text-sm leading-relaxed">Polar vortex events stress infrastructure designed for more moderate climates. Water mains burst; natural gas demand spikes beyond supply capacity; road salt loses effectiveness below –9°C. The Texas grid failure of February 2021 — triggered by a vortex-related cold event — left 4.5 million homes without power for days and caused an estimated $195 billion in damage.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-aurora mb-2">Crops & Long-term Patterns</h3>
+          <p class="text-mist text-sm leading-relaxed">Late-season cold snaps driven by vortex disruptions can devastate fruit crops when they hit after budbreak in spring. Research suggests a warming Arctic — with sea ice loss reducing the temperature gradient — may be weakening the jet stream, making vortex disruptions more frequent. The irony: climate warming may bring more extreme cold outbreaks to mid-latitudes.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Footer Strip -->
+<footer class="max-w-7xl mx-auto px-6 py-12 mt-4">
+  <div class="bento-card p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+    <a href="../index.html#phenomena" class="text-mist hover:text-white transition-colors text-sm flex items-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+      All Phenomena
+    </a>
+    <span class="text-mist/40 text-xs font-serif italic">Explore related phenomena</span>
+    <div class="flex gap-4">
+      <a href="blizzard.html" class="text-sm text-sky hover:text-white transition-colors">Blizzard &rarr;</a>
+      <a href="aurora.html" class="text-sm text-sky hover:text-white transition-colors">Aurora &rarr;</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } }), { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

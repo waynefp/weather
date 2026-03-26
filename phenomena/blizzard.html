@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blizzard & Snowstorm — Atmosphera</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Outfit','sans-serif'], serif: ['DM Serif Display','serif'] },
+          colors: { ink: '#0d0f14', 'ink-2': '#13161d', 'ink-3': '#1a1e28', mist: '#8b9ab3', frost: '#c8d8f0', sky: '#4a90d9', aurora: '#7fdbca', storm: '#4b5f7c' }
+        }
+      }
+    };
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background-color: #0d0f14; color: #e8edf5; font-family: 'Outfit', sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+    body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999; opacity: 0.025; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); }
+    .nav-glass { background: rgba(13,15,20,0.75); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid rgba(200,216,240,0.06); }
+    .bento-card { background: rgba(26,30,40,0.6); border: 1px solid rgba(200,216,240,0.07); border-radius: 2rem; backdrop-filter: blur(12px); position: relative; overflow: hidden; }
+    .bento-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg, rgba(200,216,240,0.04) 0%, transparent 60%); pointer-events: none; }
+    .section-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #4a90d9; }
+    .tag { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; border: 1px solid rgba(200,216,240,0.12); background: rgba(200,216,240,0.04); color: #8b9ab3; }
+    .grad-blue { background: linear-gradient(135deg, #e8edf5 0%, #4a90d9 60%, #7fdbca 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s cubic-bezier(0.22,1,0.36,1), transform 0.8s cubic-bezier(0.22,1,0.36,1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .pulse-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(74,144,217,0.5); animation: pulseRing 2s ease-out infinite; }
+    @keyframes pulseRing { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } }
+    .bento-main { display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: minmax(80px, auto); gap: 1rem; }
+    .span-7 { grid-column: span 7; } .span-5 { grid-column: span 5; } .span-12 { grid-column: span 12; } .span-6 { grid-column: span 6; } .span-4 { grid-column: span 4; } .span-8 { grid-column: span 8; }
+    @media (max-width: 1024px) { .span-7, .span-5, .span-8 { grid-column: span 12; } .span-6 { grid-column: span 12; } }
+
+    /* Hero */
+    .hero-bg { background: radial-gradient(ellipse 80% 70% at 50% 30%, rgba(15,22,42,1) 0%, rgba(8,12,22,1) 100%); }
+    @keyframes snowfall {
+      0%{ transform:translateY(-10px) rotate(0deg); opacity:0; }
+      10%{ opacity:0.8; }
+      100%{ transform:translateY(130px) translateX(20px) rotate(360deg); opacity:0; }
+    }
+    @keyframes snowfall2 {
+      0%{ transform:translateY(-10px) translateX(0) rotate(0deg); opacity:0; }
+      10%{ opacity:0.6; }
+      100%{ transform:translateY(120px) translateX(-15px) rotate(-270deg); opacity:0; }
+    }
+    .flake { animation: snowfall linear infinite; }
+    .flake2 { animation: snowfall2 linear infinite; }
+    @keyframes driftWind { 0%,100%{transform:translateX(0)} 50%{transform:translateX(30px)} }
+    .wind-drift { animation: driftWind 6s ease-in-out infinite; }
+    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #0d0f14; } ::-webkit-scrollbar-thumb { background: #c8d8f0; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav-glass fixed top-0 left-0 right-0 z-50">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <a href="../index.html" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+      <div class="relative w-8 h-8">
+        <div class="pulse-ring"></div>
+        <svg viewBox="0 0 32 32" fill="none" class="w-8 h-8 relative z-10">
+          <circle cx="16" cy="16" r="6" fill="#4a90d9"/>
+          <path d="M16 4v4M16 24v4M4 16h4M24 16h4" stroke="#4a90d9" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+          <path d="M7.5 7.5l2.8 2.8M21.7 21.7l2.8 2.8M7.5 24.5l2.8-2.8M21.7 10.3l2.8-2.8" stroke="#7fdbca" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+        </svg>
+      </div>
+      <span class="font-serif text-xl tracking-tight text-white">Atmosphera</span>
+    </a>
+    <span class="hidden md:block font-serif text-base italic text-mist/50">Blizzard & Snowstorm</span>
+    <a href="../index.html#phenomena" class="text-sm text-mist hover:text-white transition-colors duration-200 flex items-center gap-1.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+      All Phenomena
+    </a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero-bg relative min-h-[80vh] flex items-center justify-center overflow-hidden pt-16">
+  <!-- Animated snowflakes -->
+  <svg class="absolute inset-0 w-full h-full" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <!-- Snow drift gradient -->
+    <defs>
+      <radialGradient id="blizzardGrad" cx="50%" cy="30%" r="60%">
+        <stop offset="0%" stop-color="rgba(74,144,217,0.08)"/>
+        <stop offset="100%" stop-color="transparent"/>
+      </radialGradient>
+    </defs>
+    <rect width="1200" height="800" fill="url(#blizzardGrad)"/>
+    <!-- Snowflakes group 1 -->
+    <g class="flake" style="animation-duration:4s; animation-delay:0s"><circle cx="150" cy="50" r="2" fill="rgba(200,216,240,0.7)"/></g>
+    <g class="flake2" style="animation-duration:5.5s; animation-delay:0.5s"><circle cx="300" cy="30" r="1.5" fill="rgba(200,216,240,0.6)"/></g>
+    <g class="flake" style="animation-duration:3.5s; animation-delay:1s"><circle cx="480" cy="60" r="2.5" fill="rgba(200,216,240,0.5)"/></g>
+    <g class="flake2" style="animation-duration:6s; animation-delay:0.2s"><circle cx="650" cy="20" r="2" fill="rgba(200,216,240,0.8)"/></g>
+    <g class="flake" style="animation-duration:4.5s; animation-delay:1.5s"><circle cx="820" cy="45" r="1.5" fill="rgba(200,216,240,0.6)"/></g>
+    <g class="flake2" style="animation-duration:3.8s; animation-delay:0.8s"><circle cx="980" cy="35" r="2" fill="rgba(200,216,240,0.7)"/></g>
+    <g class="flake" style="animation-duration:5s; animation-delay:2s"><circle cx="1100" cy="55" r="2.5" fill="rgba(200,216,240,0.5)"/></g>
+    <g class="flake2" style="animation-duration:4.2s; animation-delay:1.2s"><circle cx="200" cy="80" r="1.5" fill="rgba(200,216,240,0.65)"/></g>
+    <g class="flake" style="animation-duration:3.2s; animation-delay:0.4s"><circle cx="550" cy="10" r="2" fill="rgba(200,216,240,0.75)"/></g>
+    <g class="flake2" style="animation-duration:5.8s; animation-delay:1.8s"><circle cx="750" cy="70" r="1.5" fill="rgba(200,216,240,0.6)"/></g>
+    <g class="flake" style="animation-duration:4.8s; animation-delay:0.7s"><circle cx="920" cy="25" r="2.5" fill="rgba(200,216,240,0.5)"/></g>
+    <g class="flake2" style="animation-duration:3.6s; animation-delay:2.5s"><circle cx="400" cy="15" r="2" fill="rgba(200,216,240,0.7)"/></g>
+    <!-- Horizontal wind streaks -->
+    <g class="wind-drift">
+      <line x1="0" y1="300" x2="200" y2="298" stroke="rgba(200,216,240,0.06)" stroke-width="1"/>
+      <line x1="0" y1="450" x2="300" y2="448" stroke="rgba(200,216,240,0.05)" stroke-width="1.5"/>
+      <line x1="0" y1="550" x2="250" y2="549" stroke="rgba(200,216,240,0.04)" stroke-width="1"/>
+    </g>
+  </svg>
+
+  <div class="relative z-10 text-center max-w-3xl mx-auto px-6">
+    <div class="reveal mb-4"><span class="tag">Winter</span></div>
+    <h1 class="reveal font-serif text-5xl md:text-7xl leading-tight mb-6" style="transition-delay:0.1s">
+      <span class="grad-blue">Blizzard &</span><br/>Snowstorm
+    </h1>
+    <p class="reveal text-mist text-lg md:text-xl max-w-xl mx-auto leading-relaxed" style="transition-delay:0.2s">
+      Not merely heavy snowfall, a blizzard is defined by its fury — sustained gale-force winds driving snow sideways, reducing visibility to near zero and turning the familiar landscape into a white-out death trap.
+    </p>
+  </div>
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-ink to-transparent"></div>
+</section>
+
+<!-- Quick Stats Strip -->
+<section class="max-w-7xl mx-auto px-6 py-10">
+  <div class="reveal bento-card p-6 md:p-8">
+    <p class="section-label mb-6">Key Statistics</p>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">56+ km/h</div>
+        <div class="text-mist text-sm">Minimum sustained wind speed for official blizzard classification</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">–12°C</div>
+        <div class="text-mist text-sm">Temperature threshold required alongside wind and visibility criteria</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">&lt;400 m</div>
+        <div class="text-mist text-sm">Visibility requirement — blowing/falling snow reducing sight distance</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl grad-blue mb-2">3 hrs</div>
+        <div class="text-mist text-sm">Minimum duration all criteria must persist to qualify as a blizzard</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Bento Grid -->
+<section class="max-w-7xl mx-auto px-6 pb-10">
+  <div class="bento-main">
+
+    <!-- Formation (span-7) -->
+    <div class="span-7 reveal bento-card p-8">
+      <p class="section-label mb-4">Formation Science</p>
+      <h2 class="font-serif text-3xl text-frost mb-5">Cold Air, Moisture & the Storm Track</h2>
+      <div class="space-y-4 text-mist leading-relaxed">
+        <p>A blizzard requires two ingredients that are rarely found together: extremely cold arctic air and abundant moisture. The collision of these air masses along a powerful low-pressure system creates the explosive snowfall and violent winds that define the phenomenon.</p>
+        <p><strong class="text-frost">Alberta Clippers</strong> are fast-moving systems that sweep southeast out of Canada, bringing intense cold and moderate snow. They typically lack deep moisture — their fury comes from speed and wind. <strong class="text-frost">Nor'easters</strong>, in contrast, draw moisture from the Atlantic Ocean along the US East Coast, producing prodigious snowfall sometimes exceeding 60 cm, alongside fierce northeasterly winds.</p>
+        <p><strong class="text-frost">Lake Effect Snow</strong> is a uniquely intense regional phenomenon. As frigid Arctic air masses cross the relatively warm Great Lakes, they absorb enormous moisture and heat from the open water. When this air reaches the downwind shore, it drops its moisture as intense, narrow bands of heavy snow — sometimes at rates exceeding 10 cm per hour. Cities like Buffalo, New York, and Syracuse routinely receive annual snowfalls of 3–4 metres from this effect alone.</p>
+        <p>The <strong class="text-frost">wind chill</strong> calculation captures how cold the air feels on exposed skin, combining actual temperature with wind speed. At –20°C with 50 km/h winds, the wind chill index reaches approximately –37°C — frostbite on exposed skin occurs within 10 minutes.</p>
+      </div>
+    </div>
+
+    <!-- Snow crystal types / Lake effect (span-5) -->
+    <div class="span-5 reveal bento-card p-8" style="transition-delay:0.15s">
+      <p class="section-label mb-4">Science & Structure</p>
+      <h2 class="font-serif text-2xl text-frost mb-5">Crystals, Chill & Lake Effect</h2>
+      <div class="space-y-4">
+        <div class="p-4 rounded-xl" style="background:rgba(200,216,240,0.05); border:1px solid rgba(200,216,240,0.1)">
+          <h3 class="font-semibold text-frost mb-1 text-sm">Snow Crystal Types</h3>
+          <p class="text-mist text-sm">Temperature and humidity determine crystal shape: –2°C produces thin plates; –5°C makes needles and columns; –15°C creates the classic six-armed dendrites; –30°C produces hollow columns. No two complex dendrites are identical due to slightly different atmospheric paths.</p>
+        </div>
+        <div class="p-4 rounded-xl" style="background:rgba(74,144,217,0.06); border:1px solid rgba(74,144,217,0.1)">
+          <h3 class="font-semibold text-frost mb-1 text-sm">Lake Effect Snow</h3>
+          <p class="text-mist text-sm">Buffalo, NY averages 2.5 m of snow per year, much of it lake-effect. The record single event was 175 cm from a 1977 storm. Narrow bands can dump intense snow for hours on one neighbourhood while the next is clear.</p>
+        </div>
+        <div class="p-4 rounded-xl" style="background:rgba(127,219,202,0.06); border:1px solid rgba(127,219,202,0.1)">
+          <h3 class="font-semibold text-frost mb-1 text-sm">Wind Chill Index</h3>
+          <p class="text-mist text-sm">The modern formula (adopted 2001) uses face-level wind at 1.5 m height. At –30°C and 60 km/h, wind chill reaches –51°C. Frostbite to exposed skin in under 5 minutes.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notable Events (span-12) -->
+    <div class="span-12 reveal bento-card p-8" style="transition-delay:0.2s">
+      <p class="section-label mb-4">Notable Events</p>
+      <h2 class="font-serif text-3xl text-frost mb-6">Historic Winter Storms</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div>
+          <h3 class="font-semibold text-sky mb-2">Buffalo Blizzard — 2022</h3>
+          <p class="text-mist text-sm leading-relaxed">A bomb cyclone struck Buffalo, NY over Christmas 2022. Winds exceeding 100 km/h combined with heavy lake-effect snow produced white-out conditions for 48 hours. 37 people died, many trapped in cars. Snowfall totals exceeded 150 cm in some areas within 72 hours.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-sky mb-2">Storm of the Century — 1993</h3>
+          <p class="text-mist text-sm leading-relaxed">Struck the entire US East Coast in March 1993. From Cuba to Canada, 300 fatalities, 10 million without power. Every major East Coast airport closed simultaneously. The storm produced tornadoes in Florida and blizzard conditions from Alabama to Maine — an unprecedented meteorological event.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-aurora mb-2">Snowmageddon — 2010</h3>
+          <p class="text-mist text-sm leading-relaxed">Two back-to-back nor'easters paralysed Washington D.C. with 90 cm of snow in five days. The federal government shut down for a week. "Snowmageddon" entered popular culture. Despite the disruption, it highlighted how climate shifts can bring more intense snowfall events even as overall winters warm.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Footer Strip -->
+<footer class="max-w-7xl mx-auto px-6 py-12 mt-4">
+  <div class="bento-card p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+    <a href="../index.html#phenomena" class="text-mist hover:text-white transition-colors text-sm flex items-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+      All Phenomena
+    </a>
+    <span class="text-mist/40 text-xs font-serif italic">Explore related phenomena</span>
+    <div class="flex gap-4">
+      <a href="polar-vortex.html" class="text-sm text-sky hover:text-white transition-colors">Polar Vortex &rarr;</a>
+      <a href="fog.html" class="text-sm text-sky hover:text-white transition-colors">Fog &rarr;</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } }), { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
